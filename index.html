@@ -910,43 +910,110 @@
                 }
             });
 
-            // GitHub 기본 샘플: 페이지 시작 시 준비 (모바일 소리 자동재생은 하지 않음)
-            const SAMPLE_BASE = 'be_in_a_funk_be_bummed_out_TSIgstxOCwY';
-            const SAMPLE_FOLDER = 'TSIgstxOCwY';
+            // GitHub 저장소의 실제 MP3 목록을 자동 수집해 날짜별 순환 추천합니다.
+            // UI 변경 없음. 저장소에 MP3를 추가하면 다음 접속 시 목록에 반영됩니다.
+            const FALLBACK_CONTENT = {
+                folder: 'TSIgstxOCwY',
+                base: 'be_in_a_funk_be_bummed_out_TSIgstxOCwY',
+                title: 'Be in a funk / Be bummed out'
+            };
+            const koreaDate = () => new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+            let recommendedContent = FALLBACK_CONTENT;
             let sampleFallbackUsed = false;
-            async function loadDefaultSample() {
+            let dailyCatalog = [];
+
+            async function discoverDailyCatalog() {
+                const paths = await getTree();
+                const mp3s = paths.filter(path => /\.mp3$/i.test(path));
+                const entries = mp3s.map(path => {
+                    const base = path.split('/').pop().replace(/\.mp3$/i, '');
+                    const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+                    const stem = path.replace(/\.mp3$/i, '');
+                    const id = videoId(base);
+                    const hasKO = paths.some(p => p.toLowerCase() === (stem + '_ko.vtt').toLowerCase())
+                        || paths.some(p => id && p.toLowerCase().endsWith('_ko.vtt') && p.includes(id));
+                    const hasEN = paths.some(p => p.toLowerCase() === (stem + '_en.vtt').toLowerCase())
+                        || paths.some(p => id && p.toLowerCase().endsWith('_en.vtt') && p.includes(id));
+                    return { folder, base, title: base.replace(/_[A-Za-z0-9_-]{11}$/, '').replace(/_/g, ' '),
+                        hasKO, hasEN, path };
+                });
+                // 자막이 있는 MP3 우선. 없는 파일도 재생 가능하도록 목록에 포함.
+                return entries.sort((a,b) =>
+                    (Number(b.hasKO) + Number(b.hasEN)) - (Number(a.hasKO) + Number(a.hasEN))
+                    || a.path.localeCompare(b.path));
+            }
+
+            function selectDailyRecommendation(catalog, day) {
+                if (!catalog.length) return FALLBACK_CONTENT;
+                const epochDay = Math.floor(Date.parse(day + 'T00:00:00Z') / 86400000);
+                return catalog[epochDay % catalog.length];
+            }
+
+            async function loadRecommendedContent(content) {
+                // 사용자가 로컬 파일을 선택했다면 비동기 추천 로딩이 덮어쓰지 않도록 합니다.
                 resetAudioState();
                 const token = state.loadId;
-                const mp3Name = `${SAMPLE_BASE}.mp3`;
-                const path = `${SAMPLE_FOLDER}/${mp3Name}`;
-                const url = rawUrl(path);
+                recommendedContent = content;
+                sampleFallbackUsed = false;
+                const mp3Name = `${content.base}.mp3`;
+                const path = content.folder ? `${content.folder}/${mp3Name}` : mp3Name;
                 if (el.mainAudio) {
-                    el.mainAudio.src = url;
+                    el.mainAudio.src = rawUrl(path);
                     el.mainAudio.load();
                 }
-                if (el.loadedAudioName) el.loadedAudioName.textContent = `${mp3Name} (기본 샘플)`;
-                if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 자막 연결 중…';
-                const results = await Promise.all(['ko','en'].map(lang => findSubtitle(SAMPLE_BASE, lang)));
+                if (el.loadedAudioName) el.loadedAudioName.textContent = `${mp3Name} (오늘의 추천)`;
+                if (el.pairStatus) el.pairStatus.textContent = '추천 콘텐츠 자막 연결 중…';
+                const results = await Promise.all(['ko','en'].map(lang => findSubtitle(content.base, lang)));
                 if (token !== state.loadId) return;
                 state.subtitles.ko = results[0].cues;
                 state.subtitles.en = results[1].cues;
-                if (el.pairStatus) el.pairStatus.textContent = `기본 샘플: KO ${results[0].cues.length ? '✓':'없음'} · EN ${results[1].cues.length ? '✓':'없음'}`;
+                if (el.pairStatus) el.pairStatus.textContent = `오늘의 추천: KO ${results[0].cues.length ? '✓':'없음'} · EN ${results[1].cues.length ? '✓':'없음'}`;
                 setLanguage(results[0].cues.length ? 'ko' : 'en');
+                document.dispatchEvent(new Event('shadowing:recommended-loaded'));
             }
+
+            // 저장소 탐색에 실패해도 알려진 샘플을 기본 추천합니다.
+            // 초기 비동기 작업 중 로컬 MP3 선택 시 자동 추천이 덮어쓰지 않습니다.
+            const initialLoadId = state.loadId;
+            (async () => {
+                try {
+                    dailyCatalog = await discoverDailyCatalog();
+                    console.info('[Daily 10] GitHub MP3 목록:', dailyCatalog);
+                } catch (error) {
+                    console.warn('[Daily 10] GitHub MP3 목록 조회 실패, 기본 샘플 사용:', error);
+                }
+                if (state.loadId !== initialLoadId) return;
+                const content = selectDailyRecommendation(dailyCatalog, koreaDate());
+                await loadRecommendedContent(content);
+            })().catch(error => {
+                console.error('[Daily 10] 추천 MP3 로딩 실패:', error);
+                showToast('추천 MP3를 불러오지 못했습니다. MP3 열기로 자유 학습할 수 있습니다.');
+            });
             el.mainAudio?.addEventListener('error', () => {
-                if (state.objectUrl || !el.mainAudio.src.includes(SAMPLE_BASE)) return;
+                if (state.objectUrl || !recommendedContent) return;
+                const path = recommendedContent.folder
+                    ? `${recommendedContent.folder}/${recommendedContent.base}.mp3`
+                    : `${recommendedContent.base}.mp3`;
+                if (!el.mainAudio.src.includes(encodeURIComponent(recommendedContent.base))) return;
                 if (!sampleFallbackUsed) {
                     sampleFallbackUsed = true;
-                    el.mainAudio.src = cdnUrl(`${SAMPLE_FOLDER}/${SAMPLE_BASE}.mp3`);
+                    el.mainAudio.src = cdnUrl(path);
                     el.mainAudio.load();
                 } else {
-                    showToast('기본 샘플 MP3를 불러오지 못했습니다. GitHub 파일 경로와 공개 여부를 확인하세요.');
-                    if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 MP3 로딩 실패';
+                    showToast('추천 MP3를 불러오지 못했습니다. GitHub 파일 경로를 확인하세요.');
+                    if (el.pairStatus) el.pairStatus.textContent = '추천 MP3 로딩 실패';
                 }
             });
-            loadDefaultSample().catch(error => {
-                console.error('기본 샘플 로딩 실패:', error);
-                showToast('기본 샘플 로딩에 실패했습니다. 네트워크를 확인하세요.');
+            window.ShadowingCatalog = Object.freeze({
+                getItems: () => dailyCatalog.map(item => ({ ...item })),
+                getToday: () => ({ ...recommendedContent }),
+                refresh: async () => {
+                    treePromise = null;
+                    dailyCatalog = await discoverDailyCatalog();
+                    return dailyCatalog.map(item => ({ ...item }));
+                }
             });
 
             // ==========================================
@@ -1526,5 +1593,132 @@
             });
         });
     </script>
+
+    <!-- 1차 10분 학습: 화면 변경 없는 브라우저 로컬 진행 기록 -->
+    <script>
+    (() => {
+        'use strict';
+        const TARGET_SECONDS = 600;
+        const STORAGE_PREFIX = 'shadowing-daily-v1:';
+        const audio = document.getElementById('mainAudio');
+        const fileInput = document.getElementById('bundleFiles');
+        if (!audio) return;
+
+        const today = () => new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(new Date());
+        let currentDay = today();
+        let progress = readProgress(currentDay);
+        let lastTick = null;
+        let lastSave = 0;
+        let currentSource = 'recommended';
+
+        function readProgress(day) {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_PREFIX + day) || 'null');
+                return saved && typeof saved.seconds === 'number'
+                    ? { seconds: Math.max(0, Math.min(86400, saved.seconds)), completed: !!saved.completed, ...saved }
+                    : { seconds: 0, completed: false, sources: {} };
+            } catch (_) {
+                return { seconds: 0, completed: false, sources: {} };
+            }
+        }
+        function persist() {
+            try {
+                localStorage.setItem(STORAGE_PREFIX + currentDay, JSON.stringify({
+                    seconds: progress.seconds,
+                    completed: progress.completed,
+                    completedAt: progress.completedAt || null,
+                    sources: progress.sources || {},
+                    updatedAt: new Date().toISOString()
+                }));
+            } catch (err) {
+                console.warn('학습 기록 저장 불가:', err);
+            }
+        }
+        function notify(text) {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = text;
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 4500);
+            } else {
+                // 기존 UI의 토스트 구현에 종속되지 않도록 기본 메시지도 제공합니다.
+                console.info('[Daily Learning]', text);
+            }
+        }
+        function checkDate() {
+            const nowDay = today();
+            if (nowDay !== currentDay) {
+                persist();
+                currentDay = nowDay;
+                progress = readProgress(nowDay);
+                lastTick = null;
+            }
+        }
+        function tick() {
+            checkDate();
+            const now = performance.now();
+            if (lastTick !== null && !audio.paused && !audio.ended && audio.readyState >= 2 && !audio.seeking) {
+                // 타이머 중단, 절전, 백그라운드 지연 시 비정상적으로 큰 구간은 집계하지 않음
+                const delta = Math.max(0, Math.min((now - lastTick) / 1000, 2));
+                progress.seconds += delta;
+                progress.sources ||= {};
+                progress.sources[currentSource] = (progress.sources[currentSource] || 0) + delta;
+                if (!progress.completed && progress.seconds >= TARGET_SECONDS) {
+                    progress.completed = true;
+                    progress.completedAt = new Date().toISOString();
+                    persist();
+                    notify('오늘의 10분 학습을 완료했습니다! 🎉');
+                    document.dispatchEvent(new CustomEvent('shadowing:daily-complete', {
+                        detail: { date: currentDay, seconds: progress.seconds }
+                    }));
+                }
+                if (now - lastSave > 5000) {
+                    persist();
+                    lastSave = now;
+                }
+            }
+            lastTick = !audio.paused && !audio.ended ? now : null;
+        }
+        // 브라우저 로컬 파일 선택 시 자유 학습으로 구분
+        fileInput?.addEventListener('change', event => {
+            if (Array.from(event.target.files || []).some(f => /\.(mp3|wav|m4a|ogg)$/i.test(f.name))) {
+                currentSource = 'free';
+                tick();
+            }
+        }, true);
+        // 추천 콘텐츠로 되돌릴 경우 재설정 가능
+        document.addEventListener('shadowing:recommended-loaded', () => { tick(); currentSource = 'recommended'; });
+        audio.addEventListener('play', () => { lastTick = performance.now(); });
+        for (const eventName of ['pause', 'ended', 'waiting', 'seeking', 'error']) {
+            audio.addEventListener(eventName, () => { tick(); lastTick = null; persist(); });
+        }
+        audio.addEventListener('playing', () => { lastTick = performance.now(); });
+        document.addEventListener('visibilitychange', () => { tick(); persist(); });
+        window.addEventListener('pagehide', () => { tick(); persist(); });
+        setInterval(tick, 1000);
+        window.ShadowingDaily = Object.freeze({
+            getProgress: () => {
+                tick();
+                return { date: currentDay, seconds: Math.floor(progress.seconds),
+                    targetSeconds: TARGET_SECONDS, completed: progress.completed,
+                    sources: { ...(progress.sources || {}) } };
+            },
+            getHistory: (days = 30) => {
+                const result = [];
+                const date = new Date(currentDay + 'T12:00:00Z');
+                for (let i = 0; i < Math.min(365, Math.max(1, days)); i++) {
+                    const key = date.toISOString().slice(0, 10);
+                    result.push({ date: key, ...readProgress(key) });
+                    date.setUTCDate(date.getUTCDate() - 1);
+                }
+                return result;
+            }
+        });
+        console.info('Daily 10-Minute Learning 준비됨:', window.ShadowingDaily.getProgress());
+    })();
+    </script>
+
 </body>
 </html>

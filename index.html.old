@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -81,11 +80,11 @@
             <div class="flex items-center gap-2">
                 <span id="pairStatus" class="text-xs text-slate-500 hidden sm:inline">GitHub 자동 연결 준비됨</span>
                 <!-- 한 번의 선택창에서 MP3 및 _ko.vtt, _en.vtt 파일을 함께 선택합니다. -->
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition active:scale-95">
+                <button type="button" id="btnOpenLocalFiles" class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition active:scale-95">
                     <i data-lucide="music" class="w-3.5 h-3.5"></i>
-                    <span id="audioLabelText">MP3 + VTT 열기</span>
-                    <input type="file" id="bundleFiles" accept=".mp3,.wav,.m4a,.ogg,.vtt,audio/*,text/vtt" multiple class="hidden">
-                </label>
+                    <span id="audioLabelText">MP3 열기</span>
+                </button>
+                <input type="file" id="bundleFiles" accept=".mp3,.wav,.m4a,.ogg,.vtt,audio/*,text/vtt" multiple class="hidden">
             </div>
         </header>
 
@@ -288,6 +287,12 @@
                         <i id="iconPlayVoice" data-lucide="play" class="w-3.5 h-3.5"></i>
                         <i id="iconStopVoice" data-lucide="square" class="w-3.5 h-3.5 hidden text-rose-600 fill-current"></i>
                         <span id="playVoiceLabel">내 목소리 듣기</span>
+                    </button>
+
+                    <!-- Delete current in-memory recording -->
+                    <button type="button" id="btnDeleteVoice" disabled class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 disabled:cursor-not-allowed enabled:hover:bg-rose-50 enabled:text-rose-700 text-xs font-semibold inline-flex items-center gap-1.5 transition" aria-label="내 목소리 녹음 삭제">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>녹음 삭제</span>
                     </button>
 
                     <!-- Download Recording -->
@@ -580,6 +585,7 @@
                 iconStopVoice: document.getElementById('iconStopVoice'),
                 playVoiceLabel: document.getElementById('playVoiceLabel'),
                 btnDownloadVoice: document.getElementById('btnDownloadVoice'),
+                btnDeleteVoice: document.getElementById('btnDeleteVoice'),
                 btnSequentialCompare: document.getElementById('btnSequentialCompare')
             };
 
@@ -778,6 +784,46 @@
                 updateLoopUI();
             }
 
+            // 폴더 접근이 허용된 브라우저에서만 같은 폴더의 자막을 읽습니다.
+            // 일반 file input은 선택되지 않은 형제 파일을 읽을 권한이 없습니다.
+            let authorizedSubtitleFolder = null;
+            async function subtitleFilesFromFolder(mp3File, selectedFiles) {
+                const base = mp3File.name.replace(/\.[^.]+$/, '');
+                const missing = ['ko', 'en'].filter(lang =>
+                    !selectedFiles.some(file => file.name.toLowerCase() === `${base}_${lang}.vtt`.toLowerCase())
+                );
+                if (!missing.length) return selectedFiles;
+                if (typeof window.showDirectoryPicker !== 'function' || !window.isSecureContext) return selectedFiles;
+
+                let folder = authorizedSubtitleFolder;
+                if (folder) {
+                    try {
+                        if (await folder.queryPermission({ mode: 'read' }) !== 'granted') folder = null;
+                    } catch (_) { folder = null; }
+                }
+                if (!folder) {
+                    try {
+                        // 명시적 폴더 권한 부여: OS/브라우저에 따라 두 번째 선택창이 열립니다.
+                        folder = await window.showDirectoryPicker({ startIn: 'downloads', mode: 'read' });
+                        authorizedSubtitleFolder = folder;
+                    } catch (error) {
+                        if (error.name !== 'AbortError') console.info('폴더 접근 미지원 또는 거부, GitHub 검색으로 전환:', error);
+                        return selectedFiles;
+                    }
+                }
+                const found = [...selectedFiles];
+                for (const lang of missing) {
+                    const filename = `${base}_${lang}.vtt`;
+                    try {
+                        const handle = await folder.getFileHandle(filename);
+                        found.push(await handle.getFile());
+                    } catch (error) {
+                        console.info('선택 폴더에서 자막을 찾지 못함:', filename, error.name);
+                    }
+                }
+                return found;
+            }
+
             async function loadFiles(fileList) {
                 const files = Array.from(fileList || []);
                 const mp3File = files.find(f => /\.(mp3|wav|m4a|ogg)$/i.test(f.name) || f.type.startsWith("audio/"));
@@ -789,6 +835,9 @@
 
                 resetAudioState();
                 const token = state.loadId;
+                // 모바일 파일 선택창은 선택한 파일만 읽을 수 있습니다.
+                // 선택된 자막을 우선 사용하고, 누락된 자막은 GitHub에서 검색합니다.
+                const pairedFiles = files;
 
                 if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
                 state.objectUrl = URL.createObjectURL(mp3File);
@@ -796,11 +845,11 @@
                     el.mainAudio.src = state.objectUrl;
                     el.mainAudio.load();
                     el.mainAudio.currentTime = 0;
-                    el.mainAudio.play().catch(() => {});
+                    // 모바일 자동재생 정책: 파일 선택 후 재생 버튼으로 시작합니다.
                 }
 
                 if (el.loadedAudioName) el.loadedAudioName.textContent = mp3File.name;
-                if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 + VTT 변경';
+                if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 변경';
 
                 const base = mp3File.name.replace(/\.[^.]+$/, "");
 
@@ -809,7 +858,7 @@
                 const results = await Promise.all(
                     ["ko", "en"].map(async lang => {
                         const name = `${base}_${lang}.vtt`.toLowerCase();
-                        const local = files.find(f => f.name.toLowerCase() === name);
+                        const local = pairedFiles.find(f => f.name.toLowerCase() === name);
                         if (local) {
                             try {
                                 const text = await local.text();
@@ -847,12 +896,57 @@
                 if (results.every(res => !res.cues.length)) showToast("자막 연결 실패: MP3와 KO/EN VTT를 함께 선택하거나 GitHub 접근을 확인하세요.");
             }
 
+            // 모바일에서는 운영체제의 기본 파일 선택창을 직접 엽니다.
+            // 파일 선택창의 폴더 위치는 웹페이지가 강제로 지정할 수 없습니다.
+            document.getElementById('btnOpenLocalFiles')?.addEventListener('click', () => {
+                el.bundleFiles?.click();
+            });
+
             el.bundleFiles?.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files || []);
                 e.target.value = '';
                 if (files && files.length > 0) {
                     loadFiles(files).catch(err => message("자막 처리 오류: " + err.message));
                 }
+            });
+
+            // GitHub 기본 샘플: 페이지 시작 시 준비 (모바일 소리 자동재생은 하지 않음)
+            const SAMPLE_BASE = 'be_in_a_funk_be_bummed_out_TSIgstxOCwY';
+            const SAMPLE_FOLDER = 'TSIgstxOCwY';
+            let sampleFallbackUsed = false;
+            async function loadDefaultSample() {
+                resetAudioState();
+                const token = state.loadId;
+                const mp3Name = `${SAMPLE_BASE}.mp3`;
+                const path = `${SAMPLE_FOLDER}/${mp3Name}`;
+                const url = rawUrl(path);
+                if (el.mainAudio) {
+                    el.mainAudio.src = url;
+                    el.mainAudio.load();
+                }
+                if (el.loadedAudioName) el.loadedAudioName.textContent = `${mp3Name} (기본 샘플)`;
+                if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 자막 연결 중…';
+                const results = await Promise.all(['ko','en'].map(lang => findSubtitle(SAMPLE_BASE, lang)));
+                if (token !== state.loadId) return;
+                state.subtitles.ko = results[0].cues;
+                state.subtitles.en = results[1].cues;
+                if (el.pairStatus) el.pairStatus.textContent = `기본 샘플: KO ${results[0].cues.length ? '✓':'없음'} · EN ${results[1].cues.length ? '✓':'없음'}`;
+                setLanguage(results[0].cues.length ? 'ko' : 'en');
+            }
+            el.mainAudio?.addEventListener('error', () => {
+                if (state.objectUrl || !el.mainAudio.src.includes(SAMPLE_BASE)) return;
+                if (!sampleFallbackUsed) {
+                    sampleFallbackUsed = true;
+                    el.mainAudio.src = cdnUrl(`${SAMPLE_FOLDER}/${SAMPLE_BASE}.mp3`);
+                    el.mainAudio.load();
+                } else {
+                    showToast('기본 샘플 MP3를 불러오지 못했습니다. GitHub 파일 경로와 공개 여부를 확인하세요.');
+                    if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 MP3 로딩 실패';
+                }
+            });
+            loadDefaultSample().catch(error => {
+                console.error('기본 샘플 로딩 실패:', error);
+                showToast('기본 샘플 로딩에 실패했습니다. 네트워크를 확인하세요.');
             });
 
             // ==========================================
@@ -1199,6 +1293,7 @@
 
                             if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = false;
                             if (el.btnDownloadVoice) el.btnDownloadVoice.disabled = false;
+                            if (el.btnDeleteVoice) el.btnDeleteVoice.disabled = false;
                             if (el.btnSequentialCompare) el.btnSequentialCompare.disabled = false;
 
                             if (el.recStatusBadge) {
@@ -1266,6 +1361,45 @@
                 if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
                 if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
                 if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
+            });
+
+            el.btnDeleteVoice?.addEventListener('click', () => {
+                if (state.isRecording) {
+                    showToast('녹음을 중지한 후 삭제해 주세요.');
+                    return;
+                }
+                if (!state.recordedBlobUrl) return;
+
+                // Cancel any running A/B voice comparison before revoking its audio URL.
+                state.compareId++;
+                state.comparing = false;
+                state.isLoopActive = false;
+                if (el.btnSequentialCompare) {
+                    el.btnSequentialCompare.innerHTML = '<i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i><span>원어민 → 내 목소리 비교</span>';
+                }
+                el.mainAudio?.pause();
+                if (el.recordedAudio) {
+                    el.recordedAudio.pause();
+                    el.recordedAudio.removeAttribute('src');
+                    el.recordedAudio.load();
+                }
+                URL.revokeObjectURL(state.recordedBlobUrl);
+                state.recordedBlobUrl = null;
+                state.audioChunks = [];
+                state.recordedMime = '';
+                if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = true;
+                if (el.btnDownloadVoice) el.btnDownloadVoice.disabled = true;
+                if (el.btnDeleteVoice) el.btnDeleteVoice.disabled = true;
+                if (el.btnSequentialCompare) el.btnSequentialCompare.disabled = true;
+                if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
+                if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
+                if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
+                if (el.recStatusBadge) {
+                    el.recStatusBadge.textContent = '준비됨';
+                    el.recStatusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                showToast('현재 녹음을 삭제했습니다.');
             });
 
             el.btnDownloadVoice?.addEventListener('click', () => {
