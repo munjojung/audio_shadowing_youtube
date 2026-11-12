@@ -828,10 +828,9 @@
 
                 resetAudioState();
                 const token = state.loadId;
-                // 선택한 파일에 VTT가 없으면 권한을 받은 폴더에서 먼저 찾아봅니다.
-                // 접근 불가/취소 시에는 기존 GitHub 자동 검색이 그대로 작동합니다.
-                const pairedFiles = await subtitleFilesFromFolder(mp3File, files);
-                if (token !== state.loadId) return;
+                // 모바일 파일 선택창은 선택한 파일만 읽을 수 있습니다.
+                // 선택된 자막을 우선 사용하고, 누락된 자막은 GitHub에서 검색합니다.
+                const pairedFiles = files;
 
                 if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
                 state.objectUrl = URL.createObjectURL(mp3File);
@@ -839,7 +838,7 @@
                     el.mainAudio.src = state.objectUrl;
                     el.mainAudio.load();
                     el.mainAudio.currentTime = 0;
-                    el.mainAudio.play().catch(() => {});
+                    // 모바일 자동재생 정책: 파일 선택 후 재생 버튼으로 시작합니다.
                 }
 
                 if (el.loadedAudioName) el.loadedAudioName.textContent = mp3File.name;
@@ -890,36 +889,9 @@
                 if (results.every(res => !res.cues.length)) showToast("자막 연결 실패: MP3와 KO/EN VTT를 함께 선택하거나 GitHub 접근을 확인하세요.");
             }
 
-            // OS/브라우저가 허용하는 경우 '다운로드' 폴더에서 시작합니다.
-            // 카카오톡 전용 폴더를 웹페이지가 지정하거나 자동 탐색하는 것은 불가능합니다.
-            // File System Access API 미지원(일부 모바일 브라우저 포함) 시
-            // 운영체제의 기본 파일 선택창으로 자동 전환합니다.
-            document.getElementById('btnOpenLocalFiles')?.addEventListener('click', async () => {
-                if (typeof window.showOpenFilePicker === 'function' && window.isSecureContext) {
-                    try {
-                        const handles = await window.showOpenFilePicker({
-                            multiple: true,
-                            startIn: 'downloads',
-                            types: [{
-                                description: '오디오 및 VTT 자막',
-                                accept: {
-                                    'audio/mpeg': ['.mp3'],
-                                    'audio/wav': ['.wav'],
-                                    'audio/mp4': ['.m4a'],
-                                    'audio/ogg': ['.ogg'],
-                                    'text/vtt': ['.vtt']
-                                }
-                            }]
-                        });
-                        const files = await Promise.all(handles.map(handle => handle.getFile()));
-                        if (files.length) await loadFiles(files);
-                        return;
-                    } catch (err) {
-                        if (err?.name === 'AbortError') return;
-                        // 지원하지 않는 옵션 또는 브라우저 구현 차이: 기본 파일 선택창 사용
-                        console.warn('다운로드 폴더 우선 열기 불가, 기본 선택창 사용:', err);
-                    }
-                }
+            // 모바일에서는 운영체제의 기본 파일 선택창을 직접 엽니다.
+            // 파일 선택창의 폴더 위치는 웹페이지가 강제로 지정할 수 없습니다.
+            document.getElementById('btnOpenLocalFiles')?.addEventListener('click', () => {
                 el.bundleFiles?.click();
             });
 
@@ -929,6 +901,45 @@
                 if (files && files.length > 0) {
                     loadFiles(files).catch(err => message("자막 처리 오류: " + err.message));
                 }
+            });
+
+            // GitHub 기본 샘플: 페이지 시작 시 준비 (모바일 소리 자동재생은 하지 않음)
+            const SAMPLE_BASE = 'be_in_a_funk_be_bummed_out_TSIgstxOCwY';
+            const SAMPLE_FOLDER = 'TSIgstxOCwY';
+            let sampleFallbackUsed = false;
+            async function loadDefaultSample() {
+                resetAudioState();
+                const token = state.loadId;
+                const mp3Name = `${SAMPLE_BASE}.mp3`;
+                const path = `${SAMPLE_FOLDER}/${mp3Name}`;
+                const url = rawUrl(path);
+                if (el.mainAudio) {
+                    el.mainAudio.src = url;
+                    el.mainAudio.load();
+                }
+                if (el.loadedAudioName) el.loadedAudioName.textContent = `${mp3Name} (기본 샘플)`;
+                if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 자막 연결 중…';
+                const results = await Promise.all(['ko','en'].map(lang => findSubtitle(SAMPLE_BASE, lang)));
+                if (token !== state.loadId) return;
+                state.subtitles.ko = results[0].cues;
+                state.subtitles.en = results[1].cues;
+                if (el.pairStatus) el.pairStatus.textContent = `기본 샘플: KO ${results[0].cues.length ? '✓':'없음'} · EN ${results[1].cues.length ? '✓':'없음'}`;
+                setLanguage(results[0].cues.length ? 'ko' : 'en');
+            }
+            el.mainAudio?.addEventListener('error', () => {
+                if (state.objectUrl || !el.mainAudio.src.includes(SAMPLE_BASE)) return;
+                if (!sampleFallbackUsed) {
+                    sampleFallbackUsed = true;
+                    el.mainAudio.src = cdnUrl(`${SAMPLE_FOLDER}/${SAMPLE_BASE}.mp3`);
+                    el.mainAudio.load();
+                } else {
+                    showToast('기본 샘플 MP3를 불러오지 못했습니다. GitHub 파일 경로와 공개 여부를 확인하세요.');
+                    if (el.pairStatus) el.pairStatus.textContent = '기본 샘플 MP3 로딩 실패';
+                }
+            });
+            loadDefaultSample().catch(error => {
+                console.error('기본 샘플 로딩 실패:', error);
+                showToast('기본 샘플 로딩에 실패했습니다. 네트워크를 확인하세요.');
             });
 
             // ==========================================
