@@ -703,7 +703,7 @@
             });
 
             // ==========================================
-            // File Uploads
+            // File Uploads & Default GitHub Files Load
             // ==========================================
             el.audioFileInput?.addEventListener('change', (e) => {
                 const file = e.target.files?.[0];
@@ -751,6 +751,54 @@
                 };
                 reader.readAsText(file, 'UTF-8');
             });
+
+            // Load Default Files from GitHub Repository
+            async function loadDefaultFiles() {
+                const baseUrl = "https://raw.githubusercontent.com/munjojung/audio_shadowing_youtube/main/7MFVtRS1fRw/";
+                const mp3Name = "be_up_be_off_be_away_be_7_7MFVtRS1fRw.mp3";
+                const enVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_en.vtt";
+                const koVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_ko.vtt";
+
+                // 1. Load MP3
+                if (el.mainAudio) {
+                    el.mainAudio.src = baseUrl + mp3Name;
+                    el.mainAudio.load();
+                    if (el.loadedAudioName) el.loadedAudioName.textContent = mp3Name;
+                    if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 변경';
+                }
+
+                // 2. Load KO VTT
+                try {
+                    const koRes = await fetch(baseUrl + koVttName);
+                    if (koRes.ok) {
+                        const koText = await koRes.text();
+                        const cues = parseVTT(koText);
+                        state.subtitles.ko = cues;
+                        if (el.koVttLabelText) el.koVttLabelText.textContent = `KO (${cues.length})`;
+                        setLanguage('ko');
+                        renderTranscriptList();
+                    }
+                } catch (err) {
+                    console.warn("Default KO VTT load failed:", err);
+                }
+
+                // 3. Load EN VTT
+                try {
+                    const enRes = await fetch(baseUrl + enVttName);
+                    if (enRes.ok) {
+                        const enText = await enRes.text();
+                        const cues = parseVTT(enText);
+                        state.subtitles.en = cues;
+                        if (el.enVttLabelText) el.enVttLabelText.textContent = `EN (${cues.length})`;
+                        renderTranscriptList();
+                    }
+                } catch (err) {
+                    console.warn("Default EN VTT load failed:", err);
+                }
+            }
+
+            // Trigger default file loading on startup
+            loadDefaultFiles();
 
             // ==========================================
             // Audio Playback & Loop
@@ -1048,7 +1096,7 @@
             });
 
             // ==========================================
-            // Recording & Sequential Compare
+            // Recording & Sequential Compare (Mobile Fix)
             // ==========================================
             el.btnRecordToggle?.addEventListener('click', async () => {
                 if (!state.isRecording) {
@@ -1059,7 +1107,17 @@
                         }
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         state.audioChunks = [];
-                        state.mediaRecorder = new MediaRecorder(stream);
+
+                        // Mobile-compatible MIME type detection
+                        let options = { mimeType: 'audio/webm;codecs=opus' };
+                        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                            options = { mimeType: 'audio/mp4' };
+                            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                                options = {}; // Browser default
+                            }
+                        }
+
+                        state.mediaRecorder = new MediaRecorder(stream, options);
 
                         state.mediaRecorder.ondataavailable = (e) => {
                             if (e.data && e.data.size > 0) {
@@ -1068,13 +1126,15 @@
                         };
 
                         state.mediaRecorder.onstop = () => {
-                            const blob = new Blob(state.audioChunks, { type: 'audio/webm' });
+                            const blobType = state.mediaRecorder.mimeType || 'audio/webm';
+                            const blob = new Blob(state.audioChunks, { type: blobType });
                             if (state.recordedBlobUrl) {
                                 URL.revokeObjectURL(state.recordedBlobUrl);
                             }
                             state.recordedBlobUrl = URL.createObjectURL(blob);
                             if (el.recordedAudio) {
                                 el.recordedAudio.src = state.recordedBlobUrl;
+                                el.recordedAudio.load();
                             }
 
                             if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = false;
@@ -1089,7 +1149,7 @@
                             showToast('음성 녹음이 완료되었습니다!');
                         };
 
-                        state.mediaRecorder.start();
+                        state.mediaRecorder.start(100); // Collect data chunks every 100ms for mobile stability
                         state.isRecording = true;
 
                         if (el.recBtnLabel) el.recBtnLabel.textContent = '녹음 중지';
@@ -1102,7 +1162,7 @@
                         }
                     } catch (err) {
                         console.error('Microphone error:', err);
-                        showToast('마이크 접근 권한이 거부되었습니다.');
+                        showToast('마이크 접근 권한이 거부되었거나 지원되지 않습니다.');
                     }
                 } else {
                     if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
@@ -1121,7 +1181,10 @@
                 clearInterval(state.compareTimer);
                 el.mainAudio?.pause();
                 el.recordedAudio.currentTime = 0;
-                el.recordedAudio.play().catch(err => console.error(err));
+                el.recordedAudio.play().catch(err => {
+                    console.error('Playback error:', err);
+                    showToast('녹음된 오디오 재생 중 오류가 발생했습니다.');
+                });
                 showToast('녹음된 내 목소리를 재생합니다.');
             });
 
