@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -65,47 +66,36 @@
     <!-- Main Container -->
     <div class="w-full max-w-4xl flex flex-col gap-4">
 
-        <!-- 1. Top Compact File Loader Bar -->
-        <header class="bg-white border border-slate-200/90 rounded-2xl px-4 py-2.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+        <!-- 1. Top Compact File Loader Bar (KO/EN VTT buttons removed, only MP3 bundle button) -->
+        <header class="bg-white border border-slate-200/90 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
                     <i data-lucide="headphones" class="w-4 h-4"></i>
                 </div>
-                <span class="font-bold text-sm tracking-tight text-slate-800">Shadowing Player <span class="text-blue-600">Pro</span></span>
-                <span id="loadedAudioName" class="text-xs text-slate-400 truncate max-w-[160px] sm:max-w-[240px] ml-1"></span>
+                <div>
+                    <span class="font-bold text-sm tracking-tight text-slate-800">Shadowing Player <span class="text-blue-600">Pro</span></span>
+                    <div id="loadedAudioName" class="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-[320px]">MP3 파일을 선택하세요.</div>
+                </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Audio Upload (.mp3, .wav, .m4a) -->
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition active:scale-95">
+            <div class="flex items-center gap-2">
+                <span id="pairStatus" class="text-xs text-slate-500 hidden sm:inline">GitHub 자동 연결 준비됨</span>
+                <!-- 한 번의 선택창에서 MP3 및 _ko.vtt, _en.vtt 파일을 함께 선택합니다. -->
+                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition active:scale-95">
                     <i data-lucide="music" class="w-3.5 h-3.5"></i>
-                    <span id="audioLabelText">MP3 열기</span>
-                    <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a,audio/*" class="hidden">
-                </label>
-
-                <!-- Korean VTT Upload -->
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition active:scale-95">
-                    <i data-lucide="captions" class="w-3.5 h-3.5 text-blue-600"></i>
-                    <span id="koVttLabelText">KO VTT</span>
-                    <input type="file" id="koVttInput" accept=".vtt" class="hidden">
-                </label>
-
-                <!-- English VTT Upload -->
-                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition active:scale-95">
-                    <i data-lucide="captions" class="w-3.5 h-3.5 text-indigo-600"></i>
-                    <span id="enVttLabelText">EN VTT</span>
-                    <input type="file" id="enVttInput" accept=".vtt" class="hidden">
+                    <span id="audioLabelText">MP3 + VTT 열기</span>
+                    <input type="file" id="bundleFiles" accept=".mp3,.wav,.m4a,.ogg,.vtt,audio/*,text/vtt" multiple class="hidden">
                 </label>
             </div>
         </header>
 
         <!-- 2. Top Subtitle Display Card -->
-        <section id="panelScript" class="hidden bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+        <section id="realtimeSubtitleCard" class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col gap-3">
             <!-- Header Row -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-500">
                     <span class="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[10px] font-extrabold tracking-wider">CC</span>
-                    <span>실시간 VTT 자막 스크립트</span>
+                    <span id="cueTime" class="font-mono text-slate-600">00:00.00</span>
                 </div>
                 <!-- Segmented Toggle Button [KO | EN] -->
                 <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/60">
@@ -114,16 +104,10 @@
                 </div>
             </div>
 
-            <!-- Divider Line -->
-            <div class="h-px bg-slate-100 w-full"></div>
-
             <!-- Subtitle Row -->
-            <div class="flex items-center gap-3 min-h-[36px] px-1">
-                <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="volume-2" class="w-4 h-4"></i>
-                </div>
-                <p id="currentSubtitleText" class="text-base sm:text-lg font-semibold text-slate-800 leading-snug break-words">
-                    MP3 및 VTT 파일을 업로드한 후 재생하세요.
+            <div class="min-h-[50px] flex items-center">
+                <p id="currentSubtitleText" class="text-base sm:text-lg font-bold text-slate-800 leading-snug break-words">
+                    오디오를 불러오세요.
                 </p>
             </div>
         </section>
@@ -248,7 +232,7 @@
                     <div id="pointBDisplay" class="font-mono text-base font-bold text-slate-800">--:--.--</div>
                     <div class="flex items-center gap-1.5 w-full">
                         <button type="button" id="btnSetB" class="flex-1 py-1.5 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition active:scale-95">
-                            [ B ] 설정
+                            [ B 설정 ]
                         </button>
                         <button type="button" id="btnNudgeBMinus" class="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-mono text-xs font-semibold transition">-0.1s</button>
                         <button type="button" id="btnNudgeBPlus" class="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-mono text-xs font-semibold transition">+0.1s</button>
@@ -305,12 +289,18 @@
                         <i id="iconStopVoice" data-lucide="square" class="w-3.5 h-3.5 hidden text-rose-600 fill-current"></i>
                         <span id="playVoiceLabel">내 목소리 듣기</span>
                     </button>
+
+                    <!-- Download Recording -->
+                    <button type="button" id="btnDownloadVoice" disabled class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 disabled:cursor-not-allowed enabled:hover:bg-slate-200 enabled:text-slate-800 text-xs font-semibold inline-flex items-center gap-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>녹음 저장</span>
+                    </button>
                 </div>
 
                 <!-- Sequential Compare -->
                 <button type="button" id="btnSequentialCompare" disabled class="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-300 disabled:cursor-not-allowed enabled:bg-indigo-600 enabled:hover:bg-indigo-700 enabled:text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition">
                     <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
-                    <span>순차 비교 듣기</span>
+                    <span>원어민 → 내 목소리 비교</span>
                 </button>
             </div>
         </section>
@@ -333,61 +323,38 @@
                 lucide.createIcons();
             }
 
+            const OWNER = "munjojung";
+            const REPO = "audio_shadowing_youtube";
+            const BRANCH = "main";
+
             // ==========================================
             // Helper Functions
             // ==========================================
-            function parseTimestamp(timeStr) {
-                timeStr = timeStr.trim();
-                const parts = timeStr.split(':');
-                if (parts.length === 3) {
-                    const hours = parseFloat(parts[0]);
-                    const minutes = parseFloat(parts[1]);
-                    const seconds = parseFloat(parts[2].replace(',', '.'));
-                    return hours * 3600 + minutes * 60 + seconds;
-                } else if (parts.length === 2) {
-                    const minutes = parseFloat(parts[0]);
-                    const seconds = parseFloat(parts[1].replace(',', '.'));
-                    return minutes * 60 + seconds;
-                }
-                return 0;
+            function parseTimestamp(value) {
+                const match = String(value).trim().replace(',', '.').match(/^(?:(\d+):)?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?$/);
+                if (!match) return NaN;
+                const h = Number(match[1] || 0), m = Number(match[2]), sec = Number(match[3]);
+                if (m >= 60 && match[1] || sec >= 60) return NaN;
+                return h * 3600 + m * 60 + sec + Number((match[4] || '0').padEnd(3, '0')) / 1000;
             }
 
             function parseVTT(vttText) {
                 if (!vttText) return [];
-                const lines = vttText.replace(/\r\n/g, '\n').split('\n');
+                const text = String(vttText).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
                 const cues = [];
-                let i = 0;
-
-                while (i < lines.length) {
-                    let line = lines[i].trim();
-                    if (line.includes('-->')) {
-                        const timeParts = line.split('-->');
-                        const start = parseTimestamp(timeParts[0]);
-                        const end = parseTimestamp(timeParts[1].split(' ')[0]);
-
-                        let textLines = [];
-                        i++;
-                        while (i < lines.length && lines[i].trim() !== '') {
-                            textLines.push(lines[i].trim());
-                            i++;
-                        }
-                        let text = textLines.join(' ').replace(/<\/?[^>]+(>|$)/g, '');
-                        
-                        // Remove VTT speaker tags, arrow entities like &gt;&gt;, >>, etc.
-                        text = text.replace(/^(&gt;)+|(&gt;)+$/g, '')
-                                   .replace(/^>+|%+$/g, '')
-                                   .replace(/&gt;&gt;/g, '')
-                                   .replace(/>>/g, '')
-                                   .trim();
-
-                        if (text) {
-                            cues.push({ start, end, text });
-                        }
-                    } else {
-                        i++;
-                    }
+                for (const block of text.split(/\n\s*\n/)) {
+                    const lines = block.trim().split('\n');
+                    if (/^(WEBVTT|NOTE|STYLE|REGION)(?:\s|$)/i.test(lines[0] || '')) continue;
+                    const index = lines.findIndex(line => line.includes('-->'));
+                    if (index < 0) continue;
+                    const match = lines[index].match(/(\S+)\s+-->\s+(\S+)/);
+                    if (!match) continue;
+                    const start = parseTimestamp(match[1]), end = parseTimestamp(match[2]);
+                    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+                    const content = lines.slice(index + 1).join(' ').replace(/<[^>]*>/g, '').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/^\s*(?:>>|>)+\s*/, '').trim();
+                    if (content) cues.push({start, end, text: content});
                 }
-                return cues;
+                return cues.sort((a, b) => a.start - b.start);
             }
 
             function formatTime(seconds, includeMs = false) {
@@ -400,6 +367,15 @@
                     return `${pad(mins)}:${pad(secs)}.${String(ms).padStart(2, '0')}`;
                 }
                 return `${pad(mins)}:${pad(secs)}`;
+            }
+
+            function message(text) {
+                const noticeEl = document.getElementById('notice');
+                if (noticeEl) noticeEl.textContent = text;
+                if (!noticeEl && /연결 실패|검색 오류|처리 오류/.test(text)) {
+                    console.warn("Shadowing Player subtitle diagnostics:", text);
+                    showToast("자막 연결 실패: 개발자 도구(F12) Console에서 상세 오류를 확인하세요.");
+                }
             }
 
             let toastTimer = null;
@@ -417,23 +393,138 @@
                 }, 3000);
             }
 
+            function videoId(base) {
+                return base.match(/_([A-Za-z0-9_-]{11})$/)?.[1] || "";
+            }
+
+            function rawUrl(path) {
+                const encoded = path.split("/").map(encodeURIComponent).join("/");
+                return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${encoded}`;
+            }
+
+            function cdnUrl(path) {
+                const encoded = path.split("/").map(encodeURIComponent).join("/");
+                return `https://cdn.jsdelivr.net/gh/${OWNER}/${REPO}@${BRANCH}/${encoded}`;
+            }
+
+            function apiUrl(path) {
+                const encoded = path.split("/").map(encodeURIComponent).join("/");
+                return `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encoded}?ref=${BRANCH}`;
+            }
+
+            async function downloadVTT(path) {
+                const urls = [rawUrl(path), cdnUrl(path), apiUrl(path)];
+                const errors = [];
+
+                for (const url of urls) {
+                    try {
+                        const response = await fetch(url, { cache: "no-store" });
+                        if (!response.ok) {
+                            errors.push(`HTTP ${response.status}: ${url}`);
+                            continue;
+                        }
+
+                        let text = await response.text();
+
+                        if (url.includes("api.github.com") && text.trimStart().startsWith("{")) {
+                            const json = JSON.parse(text);
+                            if (json.encoding === "base64" && json.content) {
+                                const bytes = Uint8Array.from(
+                                    atob(json.content.replace(/\s/g, "")),
+                                    c => c.charCodeAt(0)
+                                );
+                                text = new TextDecoder("utf-8").decode(bytes);
+                            }
+                        }
+
+                        const cues = parseVTT(text);
+                        if (cues.length) return { cues, url, errors: [] };
+                        errors.push(`VTT 문장 없음: ${url}`);
+                    } catch (error) {
+                        errors.push(`${error.message}: ${url}`);
+                    }
+                }
+
+                return { cues: [], url: null, errors };
+            }
+
+            async function repositoryPaths() {
+                const url = `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${BRANCH}?recursive=1`;
+                const response = await fetch(url, { cache: "no-store" });
+                if (!response.ok) throw Error(`GitHub 목록 조회 HTTP ${response.status}`);
+                const json = await response.json();
+                if (json.truncated) throw Error("GitHub 파일 목록이 잘렸습니다.");
+                return (json.tree || []).filter(item => item.type === "blob" && item.path).map(item => item.path);
+            }
+
+            let treePromise = null;
+            function getTree() {
+                if (!treePromise) {
+                    treePromise = repositoryPaths().catch(error => {
+                        treePromise = null;
+                        throw error;
+                    });
+                }
+                return treePromise;
+            }
+
+            async function findSubtitle(base, lang) {
+                const name = `${base}_${lang}.vtt`;
+                const id = videoId(base);
+                const errors = [];
+                const tried = new Set();
+                async function attempt(path) {
+                    if (tried.has(path)) return null;
+                    tried.add(path);
+                    const result = await downloadVTT(path);
+                    if (result.cues.length) return result;
+                    errors.push(...result.errors);
+                    return null;
+                }
+                // Primary layout confirmed by user: repo / YouTube-ID / filename_language.vtt
+                if (id) {
+                    const result = await attempt(`${id}/${name}`);
+                    if (result) return result;
+                }
+                // Repository-wide fallback only if primary path fails.
+                try {
+                    const paths = await getTree();
+                    const target = name.toLowerCase();
+                    const exact = paths.filter(path => path.split('/').pop().toLowerCase() === target);
+                    const candidates = exact.length ? exact : paths.filter(path => {
+                        const filename = path.split('/').pop().toLowerCase();
+                        return filename.endsWith(`_${lang}.vtt`) && id && path.toLowerCase().includes(id.toLowerCase());
+                    });
+                    for (const path of candidates) {
+                        const result = await attempt(path);
+                        if (result) return result;
+                    }
+                    if (!candidates.length) errors.push(`GitHub 파일 목록에서 ${name}을 찾지 못했습니다.`);
+                } catch (error) {
+                    errors.push(`GitHub 전체 검색 실패: ${error.message}`);
+                }
+                if (!id) {
+                    const result = await attempt(name);
+                    if (result) return result;
+                }
+                return { cues: [], url: null, errors };
+            }
+
             // ==========================================
             // DOM References
             // ==========================================
             const el = {
                 mainAudio: document.getElementById('mainAudio'),
                 recordedAudio: document.getElementById('recordedAudio'),
-                audioFileInput: document.getElementById('audioFileInput'),
-                koVttInput: document.getElementById('koVttInput'),
-                enVttInput: document.getElementById('enVttInput'),
+                bundleFiles: document.getElementById('bundleFiles'),
                 loadedAudioName: document.getElementById('loadedAudioName'),
                 audioLabelText: document.getElementById('audioLabelText'),
-                koVttLabelText: document.getElementById('koVttLabelText'),
-                enVttLabelText: document.getElementById('enVttLabelText'),
+                pairStatus: document.getElementById('pairStatus'),
 
                 btnLangKo: document.getElementById('btnLangKo'),
                 btnLangEn: document.getElementById('btnLangEn'),
                 currentSubtitleText: document.getElementById('currentSubtitleText'),
+                cueTime: document.getElementById('cueTime'),
 
                 currentTimeDisplay: document.getElementById('currentTimeDisplay'),
                 durationDisplay: document.getElementById('durationDisplay'),
@@ -457,11 +548,6 @@
                 panelLoop: document.getElementById('panelLoop'),
                 panelSpeed: document.getElementById('panelSpeed'),
                 panelRec: document.getElementById('panelRec'),
-                panelScript: document.getElementById('panelScript'),
-                transcriptListContainer: document.getElementById('transcriptListContainer'),
-                scriptCountBadge: document.getElementById('scriptCountBadge'),
-                btnShowDualLang: document.getElementById('btnShowDualLang'),
-                chkAutoScroll: document.getElementById('chkAutoScroll'),
 
                 btnMute: document.getElementById('btnMute'),
                 iconVolumeOn: document.getElementById('iconVolumeOn'),
@@ -493,17 +579,13 @@
                 iconPlayVoice: document.getElementById('iconPlayVoice'),
                 iconStopVoice: document.getElementById('iconStopVoice'),
                 playVoiceLabel: document.getElementById('playVoiceLabel'),
-                btnSequentialCompare: document.getElementById('btnSequentialCompare'),
-
-                toastBanner: document.getElementById('toastBanner'),
-                toastText: document.getElementById('toastText')
+                btnDownloadVoice: document.getElementById('btnDownloadVoice'),
+                btnSequentialCompare: document.getElementById('btnSequentialCompare')
             };
 
             const state = {
                 subtitles: { ko: [], en: [] },
                 currentLang: 'ko',
-                showDualLang: false,
-                activeCue: null,
                 activeCueIndex: -1,
                 pointA: null,
                 pointB: null,
@@ -512,29 +594,34 @@
                 mediaRecorder: null,
                 audioChunks: [],
                 recordedBlobUrl: null,
+                recordedMime: "",
                 rafId: null,
-                compareTimer: null
+                compareTimer: null,
+                loadId: 0,
+                comparing: false,
+                compareId: 0,
+                objectUrl: null
             };
 
             // ==========================================
             // Transcript Rendering
             // ==========================================
+            function escapeHtml(text) {
+                return String(text).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+            }
+
             function renderTranscriptList() {
                 if (!el.transcriptListContainer) return;
                 const primaryList = state.subtitles[state.currentLang] || [];
-                const secondaryLang = state.currentLang === 'ko' ? 'en' : 'ko';
-                const secondaryList = state.subtitles[secondaryLang] || [];
 
                 if (el.scriptCountBadge) {
-                    el.scriptCountBadge.textContent = String(primaryList.length);
+                    el.scriptCountBadge.textContent = `${primaryList.length}문장`;
                 }
 
                 if (primaryList.length === 0) {
                     el.transcriptListContainer.innerHTML = `
                         <div class="p-6 text-center text-xs text-slate-400">
-                            ${secondaryList.length > 0
-                                ? (state.currentLang === 'ko' ? '한국어(KO) VTT 파일이 업로드되지 않았습니다.' : 'English (EN) VTT file is not uploaded.')
-                                : '상단에서 KO VTT 또는 EN VTT 파일을 업로드하면 전체 자막 스크립트가 여기에 표시됩니다.'}
+                            표시할 자막 스크립트가 없습니다. (KO/EN VTT 자동 연결 대기중)
                         </div>
                     `;
                     return;
@@ -547,17 +634,9 @@
                     row.dataset.index = String(idx);
                     const isActive = idx === state.activeCueIndex;
 
-                    row.className = `transcript-row w-full text-left px-3.5 py-2.5 flex items-start gap-3 transition hover:bg-emerald-50/70 ${
+                    row.className = `transcript-row w-full text-left px-3.5 py-2.5 flex items-start gap-3 transition hover:bg-emerald-50/70 border-b border-slate-100 last:border-b-0 ${
                         isActive ? 'bg-emerald-100/90 border-l-4 border-l-emerald-600' : 'bg-white'
                     }`;
-
-                    let subTextHtml = '';
-                    if (state.showDualLang && secondaryList.length > 0) {
-                        const matchedSub = secondaryList.find(s => Math.abs(s.start - cue.start) < 1.2) || secondaryList[idx];
-                        if (matchedSub) {
-                            subTextHtml = `<div class="text-xs text-slate-500 mt-0.5 leading-snug">${matchedSub.text}</div>`;
-                        }
-                    }
 
                     row.innerHTML = `
                         <span class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${
@@ -566,8 +645,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="text-xs sm:text-sm leading-snug break-words ${
                                 isActive ? 'font-bold text-slate-900' : 'font-medium text-slate-700'
-                            }">${cue.text}</div>
-                            ${subTextHtml}
+                            }">${escapeHtml(cue.text)}</div>
                         </div>
                     `;
 
@@ -576,7 +654,7 @@
                             showToast('먼저 상단에서 MP3 오디오 파일을 열어주세요.');
                             return;
                         }
-                        el.mainAudio.currentTime = cue.start + 0.01;
+                        el.mainAudio.currentTime = cue.start;
                         if (el.mainAudio.paused) {
                             el.mainAudio.play().catch(err => console.error(err));
                         }
@@ -595,7 +673,7 @@
                 const rows = el.transcriptListContainer.querySelectorAll('.transcript-row');
                 rows.forEach((row, idx) => {
                     const timeBadge = row.querySelector('span');
-                    const mainText = row.querySelector('div > div:first-child');
+                    const mainText = row.querySelector('div > div');
                     if (idx === newIndex) {
                         row.classList.remove('bg-white');
                         row.classList.add('bg-emerald-100/90', 'border-l-4', 'border-l-emerald-600');
@@ -624,56 +702,44 @@
                 if (list.length === 0) {
                     const otherLang = state.currentLang === 'ko' ? 'en' : 'ko';
                     const msg = (state.subtitles[otherLang] || []).length > 0
-                        ? (state.currentLang === 'ko' ? '한국어(KO) VTT 파일이 업로드되지 않았습니다.' : 'English (EN) VTT file is not uploaded.')
-                        : 'MP3 및 VTT 파일을 업로드한 후 재생하세요.';
+                        ? (state.currentLang === 'ko' ? '한국어(KO) VTT 자막이 없습니다.' : 'English (EN) VTT file is not available.')
+                        : '오디오를 불러오세요.';
                     
                     el.currentSubtitleText.textContent = msg;
-                    if (el.panelSubtitleText) el.panelSubtitleText.textContent = msg;
-                    if (el.panelSubtitleTime) el.panelSubtitleTime.textContent = "00:00.00";
-                    state.activeCue = null;
+                    if (el.cueTime) el.cueTime.textContent = formatTime(currentTime, true);
                     state.activeCueIndex = -1;
                     return;
                 }
 
-                let matchedCue = null;
                 let matchedIdx = -1;
                 for (let i = 0; i < list.length; i++) {
-                    if (currentTime >= list[i].start && currentTime <= list[i].end) {
-                        matchedCue = list[i];
+                    if (currentTime >= list[i].start && currentTime < list[i].end) {
                         matchedIdx = i;
                         break;
                     }
                 }
 
-                if (!matchedCue) {
+                if (matchedIdx === -1) {
                     for (let i = list.length - 1; i >= 0; i--) {
                         if (currentTime >= list[i].start) {
-                            matchedCue = list[i];
                             matchedIdx = i;
                             break;
                         }
                     }
                 }
 
-                if (!matchedCue && list.length > 0) {
-                    matchedCue = list[0];
+                if (matchedIdx === -1 && list.length > 0) {
                     matchedIdx = 0;
                 }
 
-                state.activeCue = matchedCue;
-                if (matchedCue) {
-                    if (el.currentSubtitleText.textContent !== matchedCue.text) {
-                        el.currentSubtitleText.textContent = matchedCue.text;
-                    }
-                    if (el.panelSubtitleText && el.panelSubtitleText.textContent !== matchedCue.text) {
-                        el.panelSubtitleText.textContent = matchedCue.text;
-                    }
-                    if (el.panelSubtitleTime) {
-                        el.panelSubtitleTime.textContent = `${formatTime(matchedCue.start, true)} ~ ${formatTime(matchedCue.end, true)}`;
+                state.activeCueIndex = matchedIdx;
+                if (matchedIdx >= 0 && list[matchedIdx]) {
+                    const cue = list[matchedIdx];
+                    el.currentSubtitleText.textContent = cue.text;
+                    if (el.cueTime) {
+                        el.cueTime.textContent = `${formatTime(cue.start, true)} ~ ${formatTime(cue.end, true)}`;
                     }
                 }
-
-                state.activeCueIndex = matchedIdx;
             }
 
             function setLanguage(lang) {
@@ -689,122 +755,105 @@
                 }
                 const curTime = el.mainAudio ? el.mainAudio.currentTime : 0;
                 renderSubtitleForTime(curTime);
+
+
             }
 
             el.btnLangKo?.addEventListener('click', () => setLanguage('ko'));
             el.btnLangEn?.addEventListener('click', () => setLanguage('en'));
 
-            el.btnShowDualLang?.addEventListener('click', () => {
-                state.showDualLang = !state.showDualLang;
-                if (el.btnShowDualLang) {
-                    el.btnShowDualLang.textContent = `한·영 병기: ${state.showDualLang ? 'ON' : 'OFF'}`;
-                    el.btnShowDualLang.className = state.showDualLang
-                        ? 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300 transition'
-                        : 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition';
-                }
-                renderTranscriptList();
-                highlightActiveTranscriptRow(state.activeCueIndex);
-            });
-
             // ==========================================
-            // File Uploads & Default GitHub Files Load
+            // Audio Loading & Bundle Handling
             // ==========================================
-            el.audioFileInput?.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !el.mainAudio) return;
-
-                const objectUrl = URL.createObjectURL(file);
-                el.mainAudio.src = objectUrl;
-                el.mainAudio.load();
-
-                if (el.loadedAudioName) el.loadedAudioName.textContent = file.name;
-                if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 변경';
-                showToast(`오디오 로드 완료: ${file.name}`);
-            });
-
-            el.koVttInput?.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const cues = parseVTT(ev.target.result);
-                    state.subtitles.ko = cues;
-                    if (el.koVttLabelText) el.koVttLabelText.textContent = `KO (${cues.length})`;
-                    setLanguage('ko');
-                    renderTranscriptList();
-                    showToast(`한국어 VTT 자막 ${cues.length}문장 로드됨`);
-                };
-                reader.readAsText(file, 'UTF-8');
-            });
-
-            el.enVttInput?.addEventListener('change', (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const cues = parseVTT(ev.target.result);
-                    state.subtitles.en = cues;
-                    if (el.enVttLabelText) el.enVttLabelText.textContent = `EN (${cues.length})`;
-                    if (state.subtitles.ko.length === 0) {
-                        setLanguage('en');
-                    } else {
-                        renderSubtitleForTime(el.mainAudio?.currentTime || 0);
-                    }
-                    renderTranscriptList();
-                    showToast(`영어 VTT 자막 ${cues.length}문장 로드됨`);
-                };
-                reader.readAsText(file, 'UTF-8');
-            });
-
-            // Load Default Sample Files from GitHub Repository automatically on start
-            async function loadDefaultFiles() {
-                const baseUrl = "https://raw.githubusercontent.com/munjojung/audio_shadowing_youtube/main/7MFVtRS1fRw/";
-                const mp3Name = "be_up_be_off_be_away_be_7_7MFVtRS1fRw.mp3";
-                const enVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_en.vtt";
-                const koVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_ko.vtt";
-
-                // 1. Load MP3 Sample
-                if (el.mainAudio) {
-                    el.mainAudio.src = baseUrl + mp3Name;
-                    el.mainAudio.load();
-                    if (el.loadedAudioName) el.loadedAudioName.textContent = mp3Name;
-                    if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 변경';
-                }
-
-                // 2. Load Korean VTT Sample
-                try {
-                    const koRes = await fetch(baseUrl + koVttName);
-                    if (koRes.ok) {
-                        const koText = await koRes.text();
-                        const cues = parseVTT(koText);
-                        state.subtitles.ko = cues;
-                        if (el.koVttLabelText) el.koVttLabelText.textContent = `KO (${cues.length})`;
-                        setLanguage('ko');
-                        renderTranscriptList();
-                    }
-                } catch (err) {
-                    console.warn("Default KO VTT load failed:", err);
-                }
-
-                // 3. Load English VTT Sample
-                try {
-                    const enRes = await fetch(baseUrl + enVttName);
-                    if (enRes.ok) {
-                        const enText = await enRes.text();
-                        const cues = parseVTT(enText);
-                        state.subtitles.en = cues;
-                        if (el.enVttLabelText) el.enVttLabelText.textContent = `EN (${cues.length})`;
-                        renderTranscriptList();
-                    }
-                } catch (err) {
-                    console.warn("Default EN VTT load failed:", err);
-                }
-
-                showToast('샘플 오디오 및 자막이 준비되었습니다. 바로 재생하세요!');
+            function resetAudioState() {
+                state.loadId++;
+                state.compareId++;
+                state.comparing = false;
+                if (el.mainAudio) el.mainAudio.pause();
+                if (el.recordedAudio) el.recordedAudio.pause();
+                state.subtitles = { ko: [], en: [] };
+                state.pointA = null;
+                state.pointB = null;
+                state.isLoopActive = false;
+                updateLoopUI();
             }
 
-            // Trigger default file loading on startup
-            loadDefaultFiles();
+            async function loadFiles(fileList) {
+                const files = Array.from(fileList || []);
+                const mp3File = files.find(f => /\.(mp3|wav|m4a|ogg)$/i.test(f.name) || f.type.startsWith("audio/"));
+
+                if (!mp3File) {
+                    message("MP3 오디오 파일을 선택하세요.");
+                    return;
+                }
+
+                resetAudioState();
+                const token = state.loadId;
+
+                if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+                state.objectUrl = URL.createObjectURL(mp3File);
+                if (el.mainAudio) {
+                    el.mainAudio.src = state.objectUrl;
+                    el.mainAudio.load();
+                    el.mainAudio.currentTime = 0;
+                    el.mainAudio.play().catch(() => {});
+                }
+
+                if (el.loadedAudioName) el.loadedAudioName.textContent = mp3File.name;
+                if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 + VTT 변경';
+
+                const base = mp3File.name.replace(/\.[^.]+$/, "");
+
+                if (el.pairStatus) el.pairStatus.textContent = "한국어·영어 자막 검색 중…";
+
+                const results = await Promise.all(
+                    ["ko", "en"].map(async lang => {
+                        const name = `${base}_${lang}.vtt`.toLowerCase();
+                        const local = files.find(f => f.name.toLowerCase() === name);
+                        if (local) {
+                            try {
+                                const text = await local.text();
+                                const cues = parseVTT(text);
+                                if (cues.length) return { cues, url: "로컬 파일", errors: [] };
+                            } catch(e) {}
+                        }
+                        return findSubtitle(base, lang);
+                    })
+                );
+
+                if (token !== state.loadId) return;
+
+                state.subtitles.ko = results[0].cues;
+                state.subtitles.en = results[1].cues;
+
+                if (el.pairStatus) {
+                    el.pairStatus.textContent = `자동 자막 연결: ${state.subtitles.ko.length ? "KO ✓" : "KO 없음"} · ${state.subtitles.en.length ? "EN ✓" : "EN 없음"}`;
+                }
+
+                if (state.subtitles.ko.length > 0) {
+                    setLanguage('ko');
+                } else if (state.subtitles.en.length > 0) {
+                    setLanguage('en');
+                } else {
+                    renderSubtitleForTime(0);
+
+                }
+
+                const success = results.map((res, i) => `${i === 0 ? "KO" : "EN"}: ${res.cues.length ? `${res.cues.length}문장 연결 (${res.url})` : "연결 실패"}`);
+                const errors = results.flatMap(res => res.errors || []);
+                const detail = success.join("\n") + (errors.length ? "\n검색 오류:\n" + errors.slice(0, 8).join("\n") : "");
+                console.info("Shadowing Player subtitle result:", detail);
+                message(detail);
+                if (results.every(res => !res.cues.length)) showToast("자막 연결 실패: MP3와 KO/EN VTT를 함께 선택하거나 GitHub 접근을 확인하세요.");
+            }
+
+            el.bundleFiles?.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files || []);
+                e.target.value = '';
+                if (files && files.length > 0) {
+                    loadFiles(files).catch(err => message("자막 처리 오류: " + err.message));
+                }
+            });
 
             // ==========================================
             // Audio Playback & Loop
@@ -826,8 +875,8 @@
                     }
                 }
 
-                renderSubtitleForTime(el.mainAudio.currentTime);
-                highlightActiveTranscriptRow(state.activeCueIndex);
+                renderSubtitleForTime(cur);
+
             }
 
             function startRafLoop() {
@@ -934,13 +983,12 @@
             });
 
             // ==========================================
-            // Accordion Panels
+            // Accordion Panels Toggle Logic
             // ==========================================
             const accordions = [
                 { btn: el.toggleLoopBtn, panel: el.panelLoop, chevron: el.chevronLoop },
                 { btn: el.toggleSpeedBtn, panel: el.panelSpeed, chevron: el.chevronSpeed },
-                { btn: el.toggleRecBtn, panel: el.panelRec, chevron: el.chevronRec },
-                { btn: el.toggleScriptBtn, panel: el.panelScript, chevron: el.chevronScript }
+                { btn: el.toggleRecBtn, panel: el.panelRec, chevron: el.chevronRec }
             ];
 
             accordions.forEach(({ btn, panel, chevron }) => {
@@ -957,12 +1005,19 @@
                         panel?.classList.remove('hidden');
                         chevron?.classList.add('rotate-180');
                         btn?.classList.add('ring-2', 'ring-blue-500/40', 'bg-blue-50');
-                        if (panel === el.panelScript) {
-                            renderTranscriptList();
-                            highlightActiveTranscriptRow(state.activeCueIndex);
-                        }
                     }
                 });
+            });
+
+            // Toggle only the existing live subtitle card; no transcript list UI.
+            const realtimeSubtitleCard = document.getElementById('realtimeSubtitleCard');
+            el.toggleScriptBtn?.setAttribute('aria-controls', 'realtimeSubtitleCard');
+            el.toggleScriptBtn?.setAttribute('aria-expanded', 'true');
+            el.toggleScriptBtn?.addEventListener('click', () => {
+                const hidden = realtimeSubtitleCard.classList.toggle('hidden');
+                el.toggleScriptBtn.setAttribute('aria-expanded', String(!hidden));
+                el.chevronScript?.classList.toggle('rotate-180', !hidden);
+                el.toggleScriptBtn.classList.toggle('bg-blue-50', !hidden);
             });
 
             // ==========================================
@@ -1102,7 +1157,7 @@
             });
 
             // ==========================================
-            // Recording & Sequential Compare (Mobile Fix)
+            // Recording & Sequential Compare
             // ==========================================
             el.btnRecordToggle?.addEventListener('click', async () => {
                 if (!state.isRecording) {
@@ -1114,16 +1169,16 @@
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         state.audioChunks = [];
 
-                        // Mobile-compatible MIME type detection
                         let options = { mimeType: 'audio/webm;codecs=opus' };
                         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                             options = { mimeType: 'audio/mp4' };
                             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                                options = {}; // Browser default
+                                options = {};
                             }
                         }
 
                         state.mediaRecorder = new MediaRecorder(stream, options);
+                        state.recordedMime = state.mediaRecorder.mimeType || 'audio/webm';
 
                         state.mediaRecorder.ondataavailable = (e) => {
                             if (e.data && e.data.size > 0) {
@@ -1132,8 +1187,7 @@
                         };
 
                         state.mediaRecorder.onstop = () => {
-                            const blobType = state.mediaRecorder.mimeType || 'audio/webm';
-                            const blob = new Blob(state.audioChunks, { type: blobType });
+                            const blob = new Blob(state.audioChunks, { type: state.recordedMime });
                             if (state.recordedBlobUrl) {
                                 URL.revokeObjectURL(state.recordedBlobUrl);
                             }
@@ -1144,6 +1198,7 @@
                             }
 
                             if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = false;
+                            if (el.btnDownloadVoice) el.btnDownloadVoice.disabled = false;
                             if (el.btnSequentialCompare) el.btnSequentialCompare.disabled = false;
 
                             if (el.recStatusBadge) {
@@ -1155,7 +1210,7 @@
                             showToast('음성 녹음이 완료되었습니다!');
                         };
 
-                        state.mediaRecorder.start(100); // Collect data chunks every 100ms for mobile stability
+                        state.mediaRecorder.start(250);
                         state.isRecording = true;
 
                         if (el.recBtnLabel) el.recBtnLabel.textContent = '녹음 중지';
@@ -1186,7 +1241,6 @@
                 if (!el.recordedAudio || !el.recordedAudio.src) return;
 
                 if (!el.recordedAudio.paused) {
-                    // If currently playing, stop it
                     el.recordedAudio.pause();
                     el.recordedAudio.currentTime = 0;
                     if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
@@ -1194,8 +1248,6 @@
                     if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
                     showToast('녹음 재생이 중지되었습니다.');
                 } else {
-                    // Play recorded voice
-                    clearInterval(state.compareTimer);
                     el.mainAudio?.pause();
                     el.recordedAudio.currentTime = 0;
                     el.recordedAudio.play().then(() => {
@@ -1216,8 +1268,38 @@
                 if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
             });
 
-            el.btnSequentialCompare?.addEventListener('click', () => {
-                if (!el.recordedAudio || !el.recordedAudio.src) {
+            el.btnDownloadVoice?.addEventListener('click', () => {
+                if (!state.recordedBlobUrl) return;
+                const link = document.createElement("a");
+                link.href = state.recordedBlobUrl;
+                link.download = state.recordedMime.includes("mp4") ? "shadowing_recording.m4a" : "shadowing_recording.webm";
+                link.click();
+            });
+
+            function waitUntil(audioElement, end, token) {
+                return new Promise(resolve => {
+                    function tick() {
+                        if (token !== state.compareId || audioElement.paused || audioElement.ended || audioElement.currentTime >= end) {
+                            resolve();
+                        } else {
+                            requestAnimationFrame(tick);
+                        }
+                    }
+                    requestAnimationFrame(tick);
+                });
+            }
+
+            el.btnSequentialCompare?.addEventListener('click', async () => {
+                if (state.comparing) {
+                    state.compareId++;
+                    state.comparing = false;
+                    if (el.btnSequentialCompare) el.btnSequentialCompare.textContent = "원어민 → 내 목소리 비교";
+                    el.mainAudio?.pause();
+                    el.recordedAudio?.pause();
+                    return;
+                }
+
+                if (!state.recordedBlobUrl) {
                     showToast('먼저 음성을 녹음해주세요.');
                     return;
                 }
@@ -1226,47 +1308,60 @@
                     return;
                 }
 
-                clearInterval(state.compareTimer);
-                el.recordedAudio.pause();
-
-                let segStart = 0;
-                let segEnd = 0;
-
+                let start = 0, end = 0;
                 if (state.pointA !== null && state.pointB !== null && state.pointB > state.pointA) {
-                    segStart = state.pointA;
-                    segEnd = state.pointB;
-                } else if (state.activeCue) {
-                    segStart = state.activeCue.start;
-                    segEnd = state.activeCue.end;
+                    start = state.pointA;
+                    end = state.pointB;
                 } else {
-                    segStart = Math.max(0, el.mainAudio.currentTime - 3);
-                    segEnd = Math.min(el.mainAudio.duration || segStart + 3, segStart + 3);
+                    const list = state.subtitles[state.currentLang] || [];
+                    const cur = el.mainAudio.currentTime;
+                    let active = list.find(c => cur >= c.start && cur < c.end);
+                    if (active) {
+                        start = active.start;
+                        end = active.end;
+                    } else {
+                        start = Math.max(0, cur - 3);
+                        end = Math.min(el.mainAudio.duration || start + 3, start + 3);
+                    }
                 }
 
-                const prevLoopState = state.isLoopActive;
+                if (end <= start) {
+                    showToast('비교할 구간이 없습니다.');
+                    return;
+                }
+
+                const token = ++state.compareId;
+                state.comparing = true;
+                if (el.btnSequentialCompare) el.btnSequentialCompare.textContent = "■ 비교 중지";
+
+                const prevLoop = state.isLoopActive;
                 state.isLoopActive = false;
 
-                el.mainAudio.currentTime = segStart;
-                el.mainAudio.play().catch(err => console.error(err));
-                showToast('① 원어민 구간 재생 중...');
+                el.mainAudio.pause();
+                el.recordedAudio?.pause();
+                el.mainAudio.currentTime = start;
 
-                state.compareTimer = setInterval(() => {
-                    if (!el.mainAudio) {
-                        clearInterval(state.compareTimer);
-                        return;
-                    }
-                    if (el.mainAudio.currentTime >= segEnd || el.mainAudio.paused || el.mainAudio.ended) {
-                        clearInterval(state.compareTimer);
-                        el.mainAudio.pause();
-                        state.isLoopActive = prevLoopState;
+                try {
+                    await el.mainAudio.play();
+                    await waitUntil(el.mainAudio, end, token);
+                    el.mainAudio.pause();
 
-                        setTimeout(() => {
-                            showToast('② 내 녹음 음성 재생 중...');
-                            el.recordedAudio.currentTime = 0;
-                            el.recordedAudio.play().catch(err => console.error(err));
-                        }, 350);
+                    if (token !== state.compareId) return;
+
+                    if (el.recordedAudio) {
+                        el.recordedAudio.currentTime = 0;
+                        await el.recordedAudio.play();
+                        showToast('원어민 구간 다음으로 내 목소리를 재생합니다.');
                     }
-                }, 50);
+                } catch (err) {
+                    console.error("Compare error:", err);
+                } finally {
+                    if (token === state.compareId) {
+                        state.comparing = false;
+                        state.isLoopActive = prevLoop;
+                        if (el.btnSequentialCompare) el.btnSequentialCompare.textContent = "원어민 → 내 목소리 비교";
+                    }
+                }
             });
 
             // ==========================================

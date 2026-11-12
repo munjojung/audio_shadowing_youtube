@@ -299,10 +299,11 @@
                         <span id="recBtnLabel">녹음 시작</span>
                     </button>
 
-                    <!-- Play User Recording -->
+                    <!-- Play/Stop User Recording -->
                     <button type="button" id="btnPlayMyVoice" disabled class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 disabled:cursor-not-allowed enabled:hover:bg-slate-200 enabled:text-slate-800 text-xs font-semibold inline-flex items-center gap-1.5 transition">
-                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                        <span>내 목소리 듣기</span>
+                        <i id="iconPlayVoice" data-lucide="play" class="w-3.5 h-3.5"></i>
+                        <i id="iconStopVoice" data-lucide="square" class="w-3.5 h-3.5 hidden text-rose-600 fill-current"></i>
+                        <span id="playVoiceLabel">내 목소리 듣기</span>
                     </button>
                 </div>
 
@@ -489,6 +490,9 @@
                 recDot: document.getElementById('recDot'),
                 recBtnLabel: document.getElementById('recBtnLabel'),
                 btnPlayMyVoice: document.getElementById('btnPlayMyVoice'),
+                iconPlayVoice: document.getElementById('iconPlayVoice'),
+                iconStopVoice: document.getElementById('iconStopVoice'),
+                playVoiceLabel: document.getElementById('playVoiceLabel'),
                 btnSequentialCompare: document.getElementById('btnSequentialCompare'),
 
                 toastBanner: document.getElementById('toastBanner'),
@@ -752,14 +756,14 @@
                 reader.readAsText(file, 'UTF-8');
             });
 
-            // Load Default Files from GitHub Repository
+            // Load Default Sample Files from GitHub Repository automatically on start
             async function loadDefaultFiles() {
                 const baseUrl = "https://raw.githubusercontent.com/munjojung/audio_shadowing_youtube/main/7MFVtRS1fRw/";
                 const mp3Name = "be_up_be_off_be_away_be_7_7MFVtRS1fRw.mp3";
                 const enVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_en.vtt";
                 const koVttName = "be_up_be_off_be_away_be_7_7MFVtRS1fRw_ko.vtt";
 
-                // 1. Load MP3
+                // 1. Load MP3 Sample
                 if (el.mainAudio) {
                     el.mainAudio.src = baseUrl + mp3Name;
                     el.mainAudio.load();
@@ -767,7 +771,7 @@
                     if (el.audioLabelText) el.audioLabelText.textContent = 'MP3 변경';
                 }
 
-                // 2. Load KO VTT
+                // 2. Load Korean VTT Sample
                 try {
                     const koRes = await fetch(baseUrl + koVttName);
                     if (koRes.ok) {
@@ -782,7 +786,7 @@
                     console.warn("Default KO VTT load failed:", err);
                 }
 
-                // 3. Load EN VTT
+                // 3. Load English VTT Sample
                 try {
                     const enRes = await fetch(baseUrl + enVttName);
                     if (enRes.ok) {
@@ -795,6 +799,8 @@
                 } catch (err) {
                     console.warn("Default EN VTT load failed:", err);
                 }
+
+                showToast('샘플 오디오 및 자막이 준비되었습니다. 바로 재생하세요!');
             }
 
             // Trigger default file loading on startup
@@ -1178,14 +1184,36 @@
 
             el.btnPlayMyVoice?.addEventListener('click', () => {
                 if (!el.recordedAudio || !el.recordedAudio.src) return;
-                clearInterval(state.compareTimer);
-                el.mainAudio?.pause();
-                el.recordedAudio.currentTime = 0;
-                el.recordedAudio.play().catch(err => {
-                    console.error('Playback error:', err);
-                    showToast('녹음된 오디오 재생 중 오류가 발생했습니다.');
-                });
-                showToast('녹음된 내 목소리를 재생합니다.');
+
+                if (!el.recordedAudio.paused) {
+                    // If currently playing, stop it
+                    el.recordedAudio.pause();
+                    el.recordedAudio.currentTime = 0;
+                    if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
+                    if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
+                    if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
+                    showToast('녹음 재생이 중지되었습니다.');
+                } else {
+                    // Play recorded voice
+                    clearInterval(state.compareTimer);
+                    el.mainAudio?.pause();
+                    el.recordedAudio.currentTime = 0;
+                    el.recordedAudio.play().then(() => {
+                        if (el.iconPlayVoice) el.iconPlayVoice.classList.add('hidden');
+                        if (el.iconStopVoice) el.iconStopVoice.classList.remove('hidden');
+                        if (el.playVoiceLabel) el.playVoiceLabel.textContent = '재생 중지';
+                        showToast('녹음된 내 목소리를 재생합니다.');
+                    }).catch(err => {
+                        console.error('Playback error:', err);
+                        showToast('녹음된 오디오 재생 중 오류가 발생했습니다.');
+                    });
+                }
+            });
+
+            el.recordedAudio?.addEventListener('ended', () => {
+                if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
+                if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
+                if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
             });
 
             el.btnSequentialCompare?.addEventListener('click', () => {
