@@ -289,6 +289,12 @@
                         <span id="playVoiceLabel">내 목소리 듣기</span>
                     </button>
 
+                    <!-- Delete current in-memory recording -->
+                    <button type="button" id="btnDeleteVoice" disabled class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 disabled:cursor-not-allowed enabled:hover:bg-rose-50 enabled:text-rose-700 text-xs font-semibold inline-flex items-center gap-1.5 transition" aria-label="내 목소리 녹음 삭제">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>녹음 삭제</span>
+                    </button>
+
                     <!-- Download Recording -->
                     <button type="button" id="btnDownloadVoice" disabled class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 disabled:cursor-not-allowed enabled:hover:bg-slate-200 enabled:text-slate-800 text-xs font-semibold inline-flex items-center gap-1.5 transition">
                         <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -579,6 +585,7 @@
                 iconStopVoice: document.getElementById('iconStopVoice'),
                 playVoiceLabel: document.getElementById('playVoiceLabel'),
                 btnDownloadVoice: document.getElementById('btnDownloadVoice'),
+                btnDeleteVoice: document.getElementById('btnDeleteVoice'),
                 btnSequentialCompare: document.getElementById('btnSequentialCompare')
             };
 
@@ -1286,6 +1293,7 @@
 
                             if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = false;
                             if (el.btnDownloadVoice) el.btnDownloadVoice.disabled = false;
+                            if (el.btnDeleteVoice) el.btnDeleteVoice.disabled = false;
                             if (el.btnSequentialCompare) el.btnSequentialCompare.disabled = false;
 
                             if (el.recStatusBadge) {
@@ -1353,6 +1361,45 @@
                 if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
                 if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
                 if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
+            });
+
+            el.btnDeleteVoice?.addEventListener('click', () => {
+                if (state.isRecording) {
+                    showToast('녹음을 중지한 후 삭제해 주세요.');
+                    return;
+                }
+                if (!state.recordedBlobUrl) return;
+
+                // Cancel any running A/B voice comparison before revoking its audio URL.
+                state.compareId++;
+                state.comparing = false;
+                state.isLoopActive = false;
+                if (el.btnSequentialCompare) {
+                    el.btnSequentialCompare.innerHTML = '<i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i><span>원어민 → 내 목소리 비교</span>';
+                }
+                el.mainAudio?.pause();
+                if (el.recordedAudio) {
+                    el.recordedAudio.pause();
+                    el.recordedAudio.removeAttribute('src');
+                    el.recordedAudio.load();
+                }
+                URL.revokeObjectURL(state.recordedBlobUrl);
+                state.recordedBlobUrl = null;
+                state.audioChunks = [];
+                state.recordedMime = '';
+                if (el.btnPlayMyVoice) el.btnPlayMyVoice.disabled = true;
+                if (el.btnDownloadVoice) el.btnDownloadVoice.disabled = true;
+                if (el.btnDeleteVoice) el.btnDeleteVoice.disabled = true;
+                if (el.btnSequentialCompare) el.btnSequentialCompare.disabled = true;
+                if (el.iconPlayVoice) el.iconPlayVoice.classList.remove('hidden');
+                if (el.iconStopVoice) el.iconStopVoice.classList.add('hidden');
+                if (el.playVoiceLabel) el.playVoiceLabel.textContent = '내 목소리 듣기';
+                if (el.recStatusBadge) {
+                    el.recStatusBadge.textContent = '준비됨';
+                    el.recStatusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                showToast('현재 녹음을 삭제했습니다.');
             });
 
             el.btnDownloadVoice?.addEventListener('click', () => {
