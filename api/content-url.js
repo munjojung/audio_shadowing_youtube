@@ -2,9 +2,8 @@
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const CONTENTS = Object.freeze({
-  TSIgstxOCwY: 'be_in_a_funk_be_bummed_out_TSIgstxOCwY'
-});
+const { contents } = require('../data/content-catalog.json');
+const CONTENTS = Object.freeze(Object.fromEntries(contents.map(item => [item.id, item.base])));
 const TYPES = Object.freeze({ audio: '.mp3', en: '_en.vtt', ko: '_ko.vtt' });
 let client;
 function getClient() {

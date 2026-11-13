@@ -1008,32 +1008,55 @@
                 document.dispatchEvent(new Event('shadowing:recommended-loaded'));
             }
 
-            // 저장소 탐색에 실패해도 알려진 샘플을 기본 추천합니다.
-            // 초기 비동기 작업 중 로컬 MP3 선택 시 자동 추천이 덮어쓰지 않습니다.
+            // V2: published R2 catalog; no HTML UI changes.
+            async function fetchR2Catalog() {
+                const response = await fetch('/api/contents', { cache: 'no-store' });
+                if (!response.ok) throw new Error(`콘텐츠 목록 조회 HTTP ${response.status}`);
+                const payload = await response.json();
+                if (!Array.isArray(payload.contents)) throw new Error('잘못된 콘텐츠 목록');
+                return payload.contents.filter(item => /^[A-Za-z0-9_-]{11}$/.test(item.id));
+            }
             const initialLoadId = state.loadId;
             (async () => {
-                // URL 콘텐츠 지정 또는 기본 샘플은 R2 우선; 실패하면 기존 GitHub 추천 사용.
-                const requestedId = new URLSearchParams(location.search).get('content') || 'TSIgstxOCwY';
+                const requestedId = new URLSearchParams(location.search).get('content');
+                let published = [];
                 try {
-                    await loadR2Content(requestedId);
-                    if (state.loadId === initialLoadId + 1) console.info('[R2] 콘텐츠 로딩 성공:', requestedId);
-                    return;
+                    published = await fetchR2Catalog();
+                    dailyCatalog = published.map(item => ({ ...item, folder: `contents/${item.id}`, base: item.id, source: 'r2' }));
+                    if (state.loadId !== initialLoadId) return;
+                    if (published.length) {
+                        const selected = requestedId
+                            ? published.find(item => item.id === requestedId)
+                            : selectDailyRecommendation(published, koreaDate());
+                        if (!selected) throw new Error('등록되지 않은 콘텐츠 ID');
+                        await loadR2Content(selected.id);
+                        if (state.loadId !== initialLoadId + 1) return;
+                        recommendedContent.title = selected.title;
+                        if (el.loadedAudioName) el.loadedAudioName.textContent = `${selected.title} (R2)`;
+                        return;
+                    }
                 } catch (error) {
-                    console.warn('[R2] 로딩 실패, 기존 GitHub 추천으로 전환:', error);
-                    if (state.loadId !== initialLoadId + 1) return;
+                    console.warn('[R2] 콘텐츠 목록/재생 실패:', error);
+                    if (state.loadId !== initialLoadId && state.loadId !== initialLoadId + 1) return;
+                    if (requestedId && published.length) {
+                        showToast('지정한 콘텐츠를 불러오지 못했습니다.');
+                        return;
+                    }
                 }
+                // Existing GitHub fallback for first-run/offline API errors.
+                const fallbackToken = state.loadId;
                 try {
-                    dailyCatalog = await discoverDailyCatalog();
-                    console.info('[Daily 10] GitHub MP3 목록:', dailyCatalog);
+                    const githubCatalog = await discoverDailyCatalog();
+                    if (state.loadId !== fallbackToken) return;
+                    dailyCatalog = githubCatalog;
                 } catch (error) {
-                    console.warn('[Daily 10] GitHub MP3 목록 조회 실패, 기본 샘플 사용:', error);
+                    console.warn('[Daily 10] GitHub 목록 조회 실패:', error);
                 }
-                if (state.loadId !== initialLoadId + 1) return;
-                const content = selectDailyRecommendation(dailyCatalog, koreaDate());
-                await loadRecommendedContent(content);
+                if (state.loadId !== fallbackToken) return;
+                await loadRecommendedContent(selectDailyRecommendation(dailyCatalog, koreaDate()));
             })().catch(error => {
-                console.error('[Daily 10] 추천 MP3 로딩 실패:', error);
-                showToast('추천 MP3를 불러오지 못했습니다. MP3 열기로 자유 학습할 수 있습니다.');
+                console.error('[Daily 10] 콘텐츠 로딩 실패:', error);
+                showToast('콘텐츠를 불러오지 못했습니다. MP3 열기로 자유 학습할 수 있습니다.');
             });
             el.mainAudio?.addEventListener('error', () => {
                 if (state.objectUrl || !recommendedContent || recommendedContent.source === 'r2') return;
@@ -1054,8 +1077,13 @@
                 getItems: () => dailyCatalog.map(item => ({ ...item })),
                 getToday: () => ({ ...recommendedContent }),
                 refresh: async () => {
-                    treePromise = null;
-                    dailyCatalog = await discoverDailyCatalog();
+                    try {
+                        const items = await fetchR2Catalog();
+                        dailyCatalog = items.map(item => ({ ...item, folder: `contents/${item.id}`, base: item.id, source: 'r2' }));
+                    } catch (error) {
+                        treePromise = null;
+                        dailyCatalog = await discoverDailyCatalog();
+                    }
                     return dailyCatalog.map(item => ({ ...item }));
                 }
             });
