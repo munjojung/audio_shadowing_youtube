@@ -184,6 +184,14 @@
                     <i id="chevronScript" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
                 </button>
 
+
+                <!-- Optional per-content study guide -->
+                <button type="button" id="toggleGuideBtn" class="hidden px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition border border-transparent" aria-expanded="false" aria-controls="panelGuide">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600"></i>
+                    <span id="guideToggleLabel">학습 가이드</span>
+                    <i id="chevronGuide" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+                </button>
+
                 <!-- Right Side: Volume Mute/Unmute + Slider -->
                 <div class="ml-auto flex items-center gap-2">
                     <button type="button" id="btnMute" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition" title="음소거 토글">
@@ -311,6 +319,21 @@
                     <span>원어민 → 내 목소리 비교</span>
                 </button>
             </div>
+        </section>
+
+
+        <!-- Optional Study Guide; content metadata is independent of MP3 and VTT -->
+        <section id="panelGuide" class="hidden bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3" aria-label="Study Guide">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-xs font-bold text-amber-700">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span id="guideHeading">학습 가이드</span>
+                </div>
+                <span id="guideCount" class="text-xs text-slate-500"></span>
+            </div>
+            <p id="guideDescription" class="text-xs text-slate-600 leading-relaxed"></p>
+            <div id="guideSections" class="flex flex-col gap-2"></div>
+            <button type="button" id="guideReviewBtn" class="hidden self-start px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold"></button>
         </section>
 
     </div>
@@ -1914,6 +1937,7 @@
         toggle.setAttribute('aria-label', language === 'ko' ? 'Switch interface language to English' : '메뉴 언어를 한국어로 변경');
         toggle.title = toggle.getAttribute('aria-label');
         updateTree(document.body);
+        document.dispatchEvent(new CustomEvent('shadowing:ui-language', { detail: { language } }));
       }
       function setLanguage(next) {
         language = next;
@@ -1934,5 +1958,144 @@
       });
     })();
     </script>
+
+    <!-- Study Guide: optional static metadata, no R2 API/schema changes -->
+    <script>
+    (() => {
+      'use strict';
+      const button = document.getElementById('toggleGuideBtn');
+      const panel = document.getElementById('panelGuide');
+      const audio = document.getElementById('mainAudio');
+      const list = document.getElementById('guideSections');
+      const review = document.getElementById('guideReviewBtn');
+      if (!button || !panel || !audio || !list || !review) return;
+      const ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+      let guide = null, guideId = null, requestSerial = 0, activeSrc = '';
+      const uiLang = () => document.documentElement.lang === 'en' ? 'en' : 'ko';
+      const localize = (obj, key) => obj?.[key + (uiLang() === 'en' ? 'En' : 'Ko')] || obj?.[key + 'Ko'] || '';
+      const label = (ko, en) => uiLang() === 'en' ? en : ko;
+      const fmt = seconds => `${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(Math.floor(seconds % 60)).padStart(2,'0')}`;
+      function seek(seconds) {
+        if (!audio.src) return;
+        const time = Number(seconds);
+        if (!Number.isFinite(time) || time < 0) return;
+        const apply = () => {
+          const max = Number.isFinite(audio.duration) ? Math.max(0, audio.duration - 0.05) : time;
+          audio.currentTime = Math.min(time, max);
+          audio.play().catch(() => {});
+        };
+        if (audio.readyState >= 1) apply();
+        else audio.addEventListener('loadedmetadata', apply, { once: true });
+      }
+      function hide() {
+        guide = null; guideId = null;
+        button.classList.add('hidden');
+        panel.classList.add('hidden');
+        button.setAttribute('aria-expanded', 'false');
+        review.classList.add('hidden');
+        list.replaceChildren();
+      }
+      function render() {
+        if (!guide) return;
+        document.getElementById('guideToggleLabel').textContent = label('학습 가이드','Study Guide');
+        document.getElementById('guideHeading').textContent = localize(guide.title,'title') || label('학습 가이드','Study Guide');
+        document.getElementById('guideDescription').textContent = localize(guide,'description');
+        document.getElementById('guideCount').textContent = `${guide.sections.length} ${label('개 학습 주제','topics')}`;
+        list.replaceChildren();
+        for (const section of guide.sections) {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'w-full text-left flex items-start gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 transition';
+          const time = document.createElement('span');
+          time.className = 'shrink-0 font-mono text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg';
+          time.textContent = fmt(section.time);
+          const info = document.createElement('span');
+          info.className = 'min-w-0 flex-1 flex flex-col gap-1';
+          const name = document.createElement('span');
+          name.className = 'text-sm font-bold text-slate-800';
+          name.textContent = section.pattern;
+          const summary = document.createElement('span');
+          summary.className = 'text-xs text-slate-600 leading-relaxed';
+          summary.textContent = localize(section,'summary');
+          info.append(name,summary);
+          if (Array.isArray(section.examples) && section.examples.length) {
+            const examples = document.createElement('span');
+            examples.className = 'text-xs text-blue-700';
+            examples.textContent = section.examples.join(' · ');
+            info.append(examples);
+          }
+          row.append(time,info);
+          row.setAttribute('aria-label', `${fmt(section.time)} ${section.pattern}`);
+          row.addEventListener('click', () => seek(section.time));
+          list.append(row);
+        }
+        if (Number.isFinite(guide.reviewStart)) {
+          review.classList.remove('hidden');
+          review.textContent = `${label('영어만 듣기','English-only Review')} · ${fmt(guide.reviewStart)} ▶`;
+        } else review.classList.add('hidden');
+      }
+      async function fetchGuide(id) {
+        // Optional public metadata. R2 audio and signed URLs remain private and unchanged.
+        const path = `study-guides/${encodeURIComponent(id)}.json`;
+        const urls = [`/${path}`, `https://raw.githubusercontent.com/munjojung/audio_shadowing_youtube/main/${path}`];
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data.contentId !== id || !Array.isArray(data.sections)) continue;
+            if (!data.sections.every(s => typeof s.pattern === 'string' && Number.isFinite(s.time) && s.time >= 0)) continue;
+            return data;
+          } catch (error) { console.info('[Study Guide] optional guide unavailable:', error); }
+        }
+        return null;
+      }
+      function currentContentId() {
+        const src = audio.currentSrc || audio.src || '';
+        if (!src) return null;
+        if (src.startsWith('blob:')) {
+          const filename = document.getElementById('loadedAudioName')?.textContent || '';
+          return filename.match(/_([A-Za-z0-9_-]{11})\.(?:mp3|wav|m4a|ogg)/i)?.[1] || null;
+        }
+        const requested = new URLSearchParams(location.search).get('content');
+        const today = window.ShadowingCatalog?.getToday?.();
+        const candidate = requested && ID_PATTERN.test(requested) ? requested : (today?.source === 'r2' ? today.base : null);
+        if (candidate && ID_PATTERN.test(candidate)) return candidate;
+        const match = src.match(/(?:^|\/)([A-Za-z0-9_-]{11})\//);
+        return match?.[1] || null;
+      }
+      async function syncGuide() {
+        const id = currentContentId();
+        const src = audio.currentSrc || audio.src || '';
+        if (src === activeSrc && id === guideId && guide) return;
+        activeSrc = src;
+        const serial = ++requestSerial;
+        hide();
+        if (!id || !ID_PATTERN.test(id)) return;
+        const data = await fetchGuide(id);
+        if (serial !== requestSerial || (audio.currentSrc || audio.src || '') !== src) return;
+        if (!data) return;
+        guide = data;
+        guideId = id;
+        button.classList.remove('hidden');
+        render();
+        if (window.lucide) window.lucide.createIcons();
+      }
+      button.addEventListener('click', () => {
+        const willOpen = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !willOpen);
+        button.setAttribute('aria-expanded', String(willOpen));
+        document.getElementById('chevronGuide')?.classList.toggle('rotate-180', willOpen);
+      });
+      review.addEventListener('click', () => { if (guide) seek(guide.reviewStart); });
+      document.addEventListener('shadowing:ui-language', render);
+      document.addEventListener('shadowing:recommended-loaded', () => { syncGuide(); });
+      audio.addEventListener('loadstart', () => { activeSrc = ''; ++requestSerial; hide(); });
+      audio.addEventListener('loadedmetadata', () => { syncGuide(); });
+      // Initial recommended content is loaded asynchronously by the existing player.
+      if (audio.src) syncGuide();
+    })();
+    </script>
+
 </body>
 </html>
