@@ -1,0 +1,12 @@
+{
+  "name": "shadowing-player-pro-r2",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --check api/content-url.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1168.0",
+    "@aws-sdk/s3-request-presigner": "^3.1168.0"
+  }
+}

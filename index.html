@@ -974,17 +974,61 @@
                 document.dispatchEvent(new Event('shadowing:recommended-loaded'));
             }
 
+            // Cloudflare R2: 기존 UI/로컬 파일 선택 기능은 그대로 유지합니다.
+            // 공개 학습 콘텐츠만 허용하는 Vercel API에서 단기 서명 URL을 받습니다.
+            async function loadR2Content(contentId) {
+                if (!/^[A-Za-z0-9_-]{11}$/.test(contentId)) throw new Error('잘못된 콘텐츠 ID');
+                resetAudioState();
+                const token = state.loadId;
+                const kinds = ['audio', 'ko', 'en'];
+                const results = await Promise.all(kinds.map(async type => {
+                    const response = await fetch(`/api/content-url?id=${encodeURIComponent(contentId)}&type=${type}`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error(`R2 URL 요청 실패 (${type}: ${response.status})`);
+                    const payload = await response.json();
+                    return payload.url;
+                }));
+                if (token !== state.loadId) return;
+                const vtts = await Promise.all(results.slice(1).map(async url => {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`VTT 다운로드 실패 (${response.status})`);
+                    return parseVTT(await response.text());
+                }));
+                if (token !== state.loadId) return;
+                state.subtitles.ko = vtts[0];
+                state.subtitles.en = vtts[1];
+                recommendedContent = { folder: `contents/${contentId}`, base: contentId, title: contentId, source: 'r2' };
+                sampleFallbackUsed = true;
+                if (el.mainAudio) {
+                    el.mainAudio.src = results[0];
+                    el.mainAudio.load();
+                }
+                if (el.loadedAudioName) el.loadedAudioName.textContent = `${contentId} (R2)`;
+                if (el.pairStatus) el.pairStatus.textContent = `R2 자막: KO ${vtts[0].length ? '✓' : '없음'} · EN ${vtts[1].length ? '✓' : '없음'}`;
+                setLanguage(vtts[0].length ? 'ko' : 'en');
+                document.dispatchEvent(new Event('shadowing:recommended-loaded'));
+            }
+
             // 저장소 탐색에 실패해도 알려진 샘플을 기본 추천합니다.
             // 초기 비동기 작업 중 로컬 MP3 선택 시 자동 추천이 덮어쓰지 않습니다.
             const initialLoadId = state.loadId;
             (async () => {
+                // URL 콘텐츠 지정 또는 기본 샘플은 R2 우선; 실패하면 기존 GitHub 추천 사용.
+                const requestedId = new URLSearchParams(location.search).get('content') || 'TSIgstxOCwY';
+                try {
+                    await loadR2Content(requestedId);
+                    if (state.loadId === initialLoadId + 1) console.info('[R2] 콘텐츠 로딩 성공:', requestedId);
+                    return;
+                } catch (error) {
+                    console.warn('[R2] 로딩 실패, 기존 GitHub 추천으로 전환:', error);
+                    if (state.loadId !== initialLoadId + 1) return;
+                }
                 try {
                     dailyCatalog = await discoverDailyCatalog();
                     console.info('[Daily 10] GitHub MP3 목록:', dailyCatalog);
                 } catch (error) {
                     console.warn('[Daily 10] GitHub MP3 목록 조회 실패, 기본 샘플 사용:', error);
                 }
-                if (state.loadId !== initialLoadId) return;
+                if (state.loadId !== initialLoadId + 1) return;
                 const content = selectDailyRecommendation(dailyCatalog, koreaDate());
                 await loadRecommendedContent(content);
             })().catch(error => {
@@ -992,7 +1036,7 @@
                 showToast('추천 MP3를 불러오지 못했습니다. MP3 열기로 자유 학습할 수 있습니다.');
             });
             el.mainAudio?.addEventListener('error', () => {
-                if (state.objectUrl || !recommendedContent) return;
+                if (state.objectUrl || !recommendedContent || recommendedContent.source === 'r2') return;
                 const path = recommendedContent.folder
                     ? `${recommendedContent.folder}/${recommendedContent.base}.mp3`
                     : `${recommendedContent.base}.mp3`;
