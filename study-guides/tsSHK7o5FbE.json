@@ -1,0 +1,140 @@
+{
+  "contentId": "tsSHK7o5FbE",
+  "titleKo": "영화 인턴(The Intern) 실생활 핵심 영어 표현",
+  "titleEn": "The Intern: Useful Everyday English Expressions",
+  "descriptionKo": "13개 핵심 표현을 3개 주제로 정리했습니다. 영상 구간 시간 정보가 제공되지 않아 모든 time은 임시값 0입니다. 정확한 시간 입력 전에는 구간 이동에 사용하지 마세요.",
+  "descriptionEn": "13 expressions in 3 categories. No timestamps were provided; all time values are placeholders (0). Do not use timestamp navigation until verified.",
+  "timestampsVerified": false,
+  "sections": [
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "일상 회화 필수 표현",
+      "categoryEn": "Everyday conversation",
+      "pattern": "I couldn't be more proud of you",
+      "summaryKo": "더할 나위 없이 자랑스러워요. 상대방의 성취를 크게 칭찬할 때 사용합니다.",
+      "summaryEn": "Express strong pride in someone’s achievement.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "일상 회화 필수 표현",
+      "categoryEn": "Everyday conversation",
+      "pattern": "I can't wait to see you",
+      "summaryKo": "빨리 보고 싶어요. 기대감을 나타내는 자연스러운 표현입니다.",
+      "summaryEn": "Express excitement about seeing someone.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "일상 회화 필수 표현",
+      "categoryEn": "Everyday conversation",
+      "pattern": "I get that",
+      "summaryKo": "이해해요. 상대방의 의견이나 상황에 공감할 때 사용합니다.",
+      "summaryEn": "Show understanding or empathy.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "일상 회화 필수 표현",
+      "categoryEn": "Everyday conversation",
+      "pattern": "That would be very nice",
+      "summaryKo": "아주 좋을 것 같아요. 제안을 정중하고 긍정적으로 받아들일 때 사용합니다.",
+      "summaryEn": "Accept a suggestion politely and positively.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "일상 회화 필수 표현",
+      "categoryEn": "Everyday conversation",
+      "pattern": "I can vouch for that",
+      "summaryKo": "제가 보증할 수 있어요. 말이나 능력을 확신해 줄 때 사용합니다.",
+      "summaryEn": "Personally confirm or support a claim.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "업무 및 도움 요청 표현",
+      "categoryEn": "Work and asking for help",
+      "pattern": "I could really use your help",
+      "summaryKo": "정말 도움이 필요해요. 정중하면서도 절실한 도움 요청입니다.",
+      "summaryEn": "Ask for help politely but sincerely.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "업무 및 도움 요청 표현",
+      "categoryEn": "Work and asking for help",
+      "pattern": "It's the least I can do",
+      "summaryKo": "제가 할 수 있는 최소한의 일이에요. 보답할 때 겸손하게 사용합니다.",
+      "summaryEn": "Respond modestly when returning a favor.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "업무 및 도움 요청 표현",
+      "categoryEn": "Work and asking for help",
+      "pattern": "I'll look into it",
+      "summaryKo": "제가 알아볼게요. 문제를 조사하거나 확인하겠다는 표현입니다.",
+      "summaryEn": "Promise to investigate or check something.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "업무 및 도움 요청 표현",
+      "categoryEn": "Work and asking for help",
+      "pattern": "That's why I need your help",
+      "summaryKo": "그래서 당신의 도움이 필요한 거예요. 도움을 요청하는 이유를 밝힙니다.",
+      "summaryEn": "Explain why someone’s help is needed.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "감정 및 상황 표현",
+      "categoryEn": "Emotions and situations",
+      "pattern": "You don't look so great",
+      "summaryKo": "안색이 안 좋아 보여요. 상대방의 컨디션을 걱정할 때 사용합니다.",
+      "summaryEn": "Express concern about how someone looks or feels.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "감정 및 상황 표현",
+      "categoryEn": "Emotions and situations",
+      "pattern": "What's the matter with you?",
+      "summaryKo": "대체 무슨 일이에요? 걱정하거나 당황했을 때 묻는 표현입니다.",
+      "summaryEn": "Ask what is wrong; tone can sound confrontational.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "감정 및 상황 표현",
+      "categoryEn": "Emotions and situations",
+      "pattern": "I'm still not convinced",
+      "summaryKo": "아직 납득이 안 돼요. 확신이 서지 않거나 동의하기 어려울 때 사용합니다.",
+      "summaryEn": "Express remaining doubt.",
+      "examples": []
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "categoryKo": "감정 및 상황 표현",
+      "categoryEn": "Emotions and situations",
+      "pattern": "You're acting weird",
+      "summaryKo": "당신 좀 이상해요. 평소와 다른 행동을 지적하는 직설적인 표현입니다.",
+      "summaryEn": "Point out unusual behavior directly.",
+      "examples": []
+    }
+  ]
+}

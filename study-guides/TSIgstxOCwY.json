@@ -1,0 +1,30 @@
+{
+  "contentId": "TSIgstxOCwY",
+  "titleKo": "be in a funk / be bummed out 표현 익히기",
+  "titleEn": "Be in a Funk / Be Bummed Out",
+  "descriptionKo": "기분이 가라앉은 상태와 실망해서 속상한 상태를 구별해 학습합니다. 영상 시작 시간이 제공되지 않아 time은 임시값 0입니다.",
+  "descriptionEn": "Learn the difference between feeling in a funk and being bummed out. Timestamps were not provided; time values are placeholders.",
+  "timestampsVerified": false,
+  "sections": [
+    {
+      "time": 0,
+      "timePending": true,
+      "pattern": "be in a funk",
+      "summaryKo": "특별한 이유 없이 기분이 꿀꿀하거나 우울하고 무기력한 상태. 슬럼프에 빠진 느낌.",
+      "summaryEn": "To feel low, unmotivated, or in a slump, sometimes without a clear reason.",
+      "examples": [
+        "I've been in a funk all week.",
+        "I need to get out of this funk.",
+        "I need something to snap me out of this funk."
+      ]
+    },
+    {
+      "time": 0,
+      "timePending": true,
+      "pattern": "be bummed out",
+      "summaryKo": "실망스러운 일이 생겨 속상하거나 기분이 상한 상태. 구체적인 이유가 있을 때 더 자주 사용.",
+      "summaryEn": "To feel disappointed or upset, often because something specific happened.",
+      "examples": []
+    }
+  ]
+}
