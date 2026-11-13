@@ -2,16 +2,14 @@
   "contentId": "TSIgstxOCwY",
   "titleKo": "be in a funk / be bummed out 표현 익히기",
   "titleEn": "Be in a Funk / Be Bummed Out",
-  "descriptionKo": "기분이 가라앉은 상태와 실망해서 속상한 상태를 구별해 학습합니다. 영상 시작 시간이 제공되지 않아 time은 임시값 0입니다.",
-  "descriptionEn": "Learn the difference between feeling in a funk and being bummed out. Timestamps were not provided; time values are placeholders.",
-  "timestampsVerified": false,
+  "descriptionKo": "기분이 이유 없이 가라앉는 be in a funk와 실망해서 속상한 be bummed out의 차이를 학습합니다. 시간은 제공된 YouTube 영상 기준입니다.",
+  "descriptionEn": "Learn the difference between feeling in a funk and being bummed out. Timestamps are based on the supplied YouTube video.",
   "sections": [
     {
-      "time": 0,
-      "timePending": true,
+      "time": 29,
       "pattern": "be in a funk",
-      "summaryKo": "특별한 이유 없이 기분이 꿀꿀하거나 우울하고 무기력한 상태. 슬럼프에 빠진 느낌.",
-      "summaryEn": "To feel low, unmotivated, or in a slump, sometimes without a clear reason.",
+      "summaryKo": "특별한 이유 없이 기분이 꿀꿀하거나 우울하고 무기력한 상태. 슬럼프에 빠진 느낌. (설명 00:29–00:57)",
+      "summaryEn": "Feeling low or unmotivated, sometimes without an obvious reason. (Explanation 00:29–00:57)",
       "examples": [
         "I've been in a funk all week.",
         "I need to get out of this funk.",
@@ -19,12 +17,42 @@
       ]
     },
     {
-      "time": 0,
-      "timePending": true,
+      "time": 78,
+      "pattern": "I've been in a funk all week.",
+      "summaryKo": "나 일주일 내내 기분이 좀 꿀꿀했어.",
+      "summaryEn": "I have felt down all week.",
+      "examples": []
+    },
+    {
+      "time": 120,
+      "pattern": "I need to get out of this funk.",
+      "summaryKo": "이 우울한 기분에서 벗어나야겠어.",
+      "summaryEn": "I need to shake off this low mood.",
+      "examples": []
+    },
+    {
+      "time": 157,
+      "pattern": "I need something to snap me out of this funk.",
+      "summaryKo": "이 무기력함에서 정신을 번쩍 들게 할 무언가가 필요해.",
+      "summaryEn": "I need something to snap me out of this low mood.",
+      "examples": []
+    },
+    {
+      "time": 180,
       "pattern": "be bummed out",
-      "summaryKo": "실망스러운 일이 생겨 속상하거나 기분이 상한 상태. 구체적인 이유가 있을 때 더 자주 사용.",
-      "summaryEn": "To feel disappointed or upset, often because something specific happened.",
+      "summaryKo": "실망스러운 일이 생겨 속상하거나 기분이 상한 상태. 구체적인 이유가 있을 때 더 자주 사용. (설명 03:00–03:12)",
+      "summaryEn": "Feeling disappointed or upset, often about something specific. (Explanation 03:00–03:12)",
+      "examples": []
+    },
+    {
+      "time": 329,
+      "pattern": "한 번 더 반복 / Repeat Once More",
+      "summaryKo": "영상에서 앞서 배운 표현을 한 번 더 반복하는 구간.",
+      "summaryEn": "Replay section for reviewing the expressions.",
       "examples": []
     }
-  ]
+  ],
+  "reviewStart": 522,
+  "notesKo": "각 구간 시작 시간은 사용자가 제공한 영상 시간입니다. MP3 편집본과 다를 수 있습니다.",
+  "notesEn": "Section times are user-supplied video timestamps and may differ from edited MP3 files."
 }
