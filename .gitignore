@@ -1,2 +1,27 @@
 
 node_modules/
+
+# Local administrator tools
+/admin-upload.html
+/scripts/admin-upload-server.js
+
+# Local MP3 and subtitle content
+/**/*.mp3
+/**/*.vtt
+
+# Credentials
+.env
+.env.*
+!.env.example
+
+# Local backup
+/index-복사본.html
+
+# Temporary upload files
+*.tmp
+
+# Local source backups
+/scripts/*.stage3-backup.js
+
+# Stage 4 local backups
+/scripts/*.stage4b-backup.js

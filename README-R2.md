@@ -1,7 +1,7 @@
 # Shadowing Player Pro — R2 integration (initial test)
 
 ## Contents
-- `index.html`: modified from the previously provided `shadowing_player_pro_daily10_github_catalog.html` snapshot. Existing UI retained.
+- `index.html`: modified directly from the user-uploaded `index(2).html` (90,203 bytes). Existing HTML layout and controls retained.
 - `api/content-url.js`: Vercel Node function, short-lived presigned R2 GET URL.
 - `package.json`: server SDK dependencies.
 

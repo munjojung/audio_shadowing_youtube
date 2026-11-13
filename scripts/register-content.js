@@ -1,17 +1,26 @@
-
 'use strict';
 
-// Shadowing Player Pro — R2 Content Registration
+const {
+  buildObjectKeys,
+  inspectR2Objects,
+  assertNewRegistrationAllowed
+} = require('./r2-upload-state');
+
+// Shadowing Player Pro - R2 Content Registration
 // Run locally with a separate, write-scoped R2 API token.
 // Never commit credentials.
 
+const {
+  validateContentInfo,
+  validateFiles
+} = require('./content-validator');
+const { calculateSha256 } = require('./r2-integrity');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const {
   S3Client,
-  PutObjectCommand,
-  HeadObjectCommand
+  PutObjectCommand
 } = require('@aws-sdk/client-s3');
 
 const catalogPath = path.join(
@@ -67,6 +76,15 @@ async function main() {
     throw new Error('Filename/ID mismatch');
   }
 
+  // Stage 4-B: validate before any R2 operation.
+  validateContentInfo(id, title, base);
+  const validation = validateFiles(
+    id, audioPath, koPath, enPath
+  );
+  console.log(
+    'Pre-upload validation passed:',
+    JSON.stringify(validation)
+  );
   // 2. Read upload-only R2 credentials
   const {
     R2_ACCOUNT_ID,
@@ -126,30 +144,18 @@ async function main() {
     [enPath, '_en.vtt', 'text/vtt; charset=utf-8']
   ];
 
-  // 6. Check that no destination object exists
-  // before starting any upload.
-  for (const [, suffix] of objects) {
-    const key = `contents/${id}/${base}${suffix}`;
+  // 6. Inspect destination objects before uploading.
+  const keys = buildObjectKeys(id, base);
 
-    try {
-      await client.send(
-        new HeadObjectCommand({
-          Bucket: R2_BUCKET_NAME,
-          Key: key
-        })
-      );
+  const r2State = await inspectR2Objects(
+    client,
+    R2_BUCKET_NAME,
+    keys
+  );
 
-      throw new Error(`Object already exists: ${key}`);
-    } catch (error) {
-      if (
-        !['NotFound', 'NoSuchKey'].includes(error.name) &&
-        error.$metadata?.httpStatusCode !== 404
-      ) {
-        throw error;
-      }
-    }
-  }
+  console.log('R2 object state:', r2State.state);
 
+  assertNewRegistrationAllowed(r2State);
   // 7. Upload MP3 and subtitle files
   for (const [file, suffix, contentType] of objects) {
     const key = `contents/${id}/${base}${suffix}`;
@@ -160,7 +166,10 @@ async function main() {
         Key: key,
         Body: fs.createReadStream(file),
         ContentLength: fs.statSync(file).size,
-        ContentType: contentType
+        ContentType: contentType,
+        Metadata: {
+          sha256: await calculateSha256(file)
+        }
       })
     );
 
