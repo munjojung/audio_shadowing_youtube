@@ -79,10 +79,13 @@
 
             <div class="flex items-center gap-2">
                 <span id="pairStatus" class="text-xs text-slate-500 hidden sm:inline">GitHub 자동 연결 준비됨</span>
-                <!-- 한 번의 선택창에서 MP3 및 _ko.vtt, _en.vtt 파일을 함께 선택합니다. -->
+                <!-- MP3 button stays first; interface language uses one toggle button. -->
                 <button type="button" id="btnOpenLocalFiles" class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition active:scale-95">
                     <i data-lucide="music" class="w-3.5 h-3.5"></i>
                     <span id="audioLabelText">MP3 열기</span>
+                </button>
+                <button type="button" id="uiLanguageToggle" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition shrink-0" aria-label="Switch interface language to English" title="Switch interface language to English">
+                    <span id="uiLanguageToggleLabel">English</span>
                 </button>
                 <input type="file" id="bundleFiles" accept=".mp3,.wav,.m4a,.ogg,.vtt,audio/*,text/vtt" multiple class="hidden">
             </div>
@@ -1792,5 +1795,144 @@
     })();
     </script>
 
+    <!-- UI translation layer: leaves the player logic, layout, and subtitle content untouched. -->
+    <script>
+    (() => {
+      'use strict';
+      const translations = [
+        ['GitHub 자동 연결 준비됨','GitHub auto-connect ready'],
+        ['MP3 파일을 선택하세요.','Select an MP3 file.'],
+        ['MP3 오디오 파일을 선택하세요.','Select an MP3 audio file.'],
+        ['MP3 열기','Open MP3'], ['MP3 변경','Change MP3'],
+        ['오디오를 불러오세요.','Load an audio file.'],
+        ['재생/일시정지','Play/Pause'], ['구간설정','Set loop points'], ['3초 이동','Skip 3 sec'],
+        ['3초 뒤로 (←)','Back 3 sec (←)'], ['3초 앞으로 (→)','Forward 3 sec (→)'],
+        ['재생 / 일시정지 (Space)','Play / Pause (Space)'], ['음소거 토글','Toggle mute'],
+        ['A-B 구간 반복 설정','A-B loop settings'], ['A-B 구간 반복','A-B loop'],
+        ['재생 속도 조절','Playback speed control'], ['재생 속도','Playback speed'],
+        ['섀도잉 음성 녹음 & 비교','Shadowing recording & comparison'],
+        ['섀도잉 음성 녹음','Shadowing recording'], ['실시간 VTT 자막','Live VTT subtitles'],
+        ['반복 상태:','Loop status:'], ['구간 초기화','Reset loop'],
+        ['Point A (시작)','Point A (start)'], ['Point B (종료)','Point B (end)'],
+        ['[ A 설정 ]','[ Set A ]'], ['[ B 설정 ]','[ Set B ]'],
+        ['녹음 시작','Start recording'], ['녹음 중지','Stop recording'],
+        ['녹음 중...','Recording...'], ['녹음 완료','Recording complete'],
+        ['내 목소리 듣기','Play my voice'], ['녹음 삭제','Delete recording'],
+        ['녹음 저장','Save recording'], ['재생 중지','Stop playback'],
+        ['원어민 → 내 목소리 비교','Native speaker → My voice'],
+        ['■ 비교 중지','■ Stop comparison'], ['준비됨','Ready'],
+        ['오늘의 추천','Today’s pick'], ['추천 콘텐츠 자막 연결 중…','Connecting recommended subtitles…'],
+        ['한국어·영어 자막 검색 중…','Searching for Korean and English subtitles…'],
+        ['자동 자막 연결:','Auto subtitles:'], ['R2 자막:','R2 subtitles:'],
+        ['자막 연결 실패:','Subtitle connection failed:'],
+        ['추천 MP3 로딩 실패','Recommended MP3 failed to load'],
+        ['없음','unavailable'], ['검색 중…','searching…'],
+        ['먼저 상단에서 MP3 오디오 파일을 열어주세요.','Please open an MP3 file at the top first.'],
+        ['먼저 오디오 파일을 열어주세요.','Please open an audio file first.'],
+        ['먼저 음성을 녹음해주세요.','Please record your voice first.'],
+        ['원어민 MP3 오디오 파일이 필요합니다.','A native-speaker MP3 file is required.'],
+        ['Point B는 Point A보다 뒤의 시간이어야 합니다.','Point B must be later than Point A.'],
+        ['A-B 구간이 초기화되었습니다.','A-B loop has been reset.'],
+        ['먼저 유효한 Point A와 Point B를 설정해주세요.','Please set valid A and B points first.'],
+        ['이 브라우저에서는 마이크 녹음을 지원하지 않습니다.','Microphone recording is not supported in this browser.'],
+        ['음성 녹음이 완료되었습니다!','Voice recording completed!'],
+        ['마이크 접근 권한이 거부되었거나 지원되지 않습니다.','Microphone access was denied or is unsupported.'],
+        ['녹음 재생이 중지되었습니다.','Recording playback stopped.'],
+        ['녹음된 내 목소리를 재생합니다.','Playing your recorded voice.'],
+        ['녹음된 오디오 재생 중 오류가 발생했습니다.','An error occurred playing the recording.'],
+        ['녹음을 중지한 후 삭제해 주세요.','Stop recording before deleting it.'],
+        ['현재 녹음을 삭제했습니다.','Current recording deleted.'],
+        ['비교할 구간이 없습니다.','There is no segment to compare.'],
+        ['원어민 구간 다음으로 내 목소리를 재생합니다.','Playing your voice after the native-speaker segment.'],
+        ['오늘의 10분 학습을 완료했습니다!','You completed today’s 10-minute practice!'],
+        ['자막 연결 실패: MP3와 KO/EN VTT를 함께 선택하거나 GitHub 접근을 확인하세요.','Subtitle connection failed: select MP3 and KO/EN VTT together, or check GitHub access.'],
+        ['자막 연결 실패: 개발자 도구(F12) Console에서 상세 오류를 확인하세요.','Subtitle connection failed: check the browser console (F12).'],
+        ['지정한 콘텐츠를 불러오지 못했습니다.','Could not load the requested content.'],
+        ['콘텐츠를 불러오지 못했습니다. MP3 열기로 자유 학습할 수 있습니다.','Could not load content. Use Open MP3 for independent practice.'],
+        ['추천 MP3를 불러오지 못했습니다. GitHub 파일 경로를 확인하세요.','Could not load the recommended MP3. Check the GitHub file path.'],
+        ['한국어(KO) VTT 자막이 없습니다.','Korean (KO) subtitles are unavailable.'],
+        ['표시할 자막 스크립트가 없습니다. (KO/EN VTT 자동 연결 대기중)','No transcript available. (Waiting for KO/EN VTT.)'],
+        ['알림','Notice'], ['문장 연결','cues connected'], ['문장','cues'],
+        ['연결 실패','connection failed'], ['검색 오류','search error'],
+        ['자막 처리 오류:','Subtitle processing error:'],
+        ['로컬 파일','local file'], ['연결 중…','connecting…'],
+        ['잘못된 콘텐츠 ID','Invalid content ID'],
+        ['반복','Loop']
+      ].sort((a,b) => b[0].length - a[0].length);
+      const exclude = 'script,style,#currentSubtitleText,#loadedAudioName,#uiLanguageToggle,.transcript-row';
+      const records = new WeakMap();
+      let language = 'ko';
+      try { language = localStorage.getItem('shadowing-ui-language') === 'en' ? 'en' : 'ko'; } catch (_) {}
+      function translate(value) {
+        let output = value;
+        for (const [ko,en] of translations) output = output.split(ko).join(en);
+        return output;
+      }
+      function excluded(element) { return !!element?.closest?.(exclude); }
+      function updateText(node) {
+        if (!node.parentElement || excluded(node.parentElement)) return;
+        const current = node.nodeValue;
+        let record = records.get(node);
+        if (!record || current !== record.rendered) {
+          record = { original: current, rendered: current };
+          records.set(node, record);
+        }
+        const next = language === 'en' ? translate(record.original) : record.original;
+        if (current !== next) node.nodeValue = next;
+        record.rendered = next;
+      }
+      const attrs = ['title','aria-label','placeholder'];
+      function updateAttributes(element) {
+        if (excluded(element)) return;
+        for (const attr of attrs) {
+          if (!element.hasAttribute(attr)) continue;
+          const key = 'uiOriginal' + attr.replace(/[^a-z]/gi,'');
+          const renderedKey = key + 'Rendered';
+          const current = element.getAttribute(attr);
+          if (element.dataset[renderedKey] !== current) element.dataset[key] = current;
+          const original = element.dataset[key];
+          const next = language === 'en' ? translate(original) : original;
+          if (current !== next) element.setAttribute(attr,next);
+          element.dataset[renderedKey] = next;
+        }
+      }
+      function updateTree(root) {
+        if (root.nodeType === Node.TEXT_NODE) return updateText(root);
+        if (root.nodeType !== Node.ELEMENT_NODE || excluded(root)) return;
+        updateAttributes(root);
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (node.nodeType === Node.TEXT_NODE) updateText(node);
+          else updateAttributes(node);
+        }
+      }
+      function refresh() {
+        document.documentElement.lang = language;
+        const toggle = document.getElementById('uiLanguageToggle');
+        toggle.textContent = language === 'ko' ? 'English' : '한국어';
+        toggle.setAttribute('aria-label', language === 'ko' ? 'Switch interface language to English' : '메뉴 언어를 한국어로 변경');
+        toggle.title = toggle.getAttribute('aria-label');
+        updateTree(document.body);
+      }
+      function setLanguage(next) {
+        language = next;
+        try { localStorage.setItem('shadowing-ui-language',next); } catch (_) {}
+        refresh();
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('uiLanguageToggle').addEventListener('click', () => setLanguage(language === 'ko' ? 'en' : 'ko'));
+        refresh();
+        const observer = new MutationObserver(mutations => {
+          for (const mutation of mutations) {
+            if (mutation.type === 'characterData') updateText(mutation.target);
+            else if (mutation.type === 'attributes') updateAttributes(mutation.target);
+            else for (const node of mutation.addedNodes) updateTree(node);
+          }
+        });
+        observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:attrs});
+      });
+    })();
+    </script>
 </body>
 </html>
