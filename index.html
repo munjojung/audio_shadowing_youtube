@@ -1170,8 +1170,10 @@
             function updatePlayPauseButton() {
                 if (!el.mainAudio || !el.btnPlayPause) return;
                 const playing = !el.mainAudio.paused && !el.mainAudio.ended;
-                el.iconPlay?.classList.toggle('hidden', playing);
-                el.iconPause?.classList.toggle('hidden', !playing);
+                // Lucide replaces <i> with <svg>; cached <i> references become stale.
+                // Always target the live SVG nodes by ID.
+                document.getElementById('iconPlay')?.classList.toggle('hidden', playing);
+                document.getElementById('iconPause')?.classList.toggle('hidden', !playing);
                 el.btnPlayPause.classList.toggle('bg-blue-600', !playing);
                 el.btnPlayPause.classList.toggle('hover:bg-blue-700', !playing);
                 el.btnPlayPause.classList.toggle('shadow-blue-500/25', !playing);
@@ -1185,6 +1187,7 @@
             }
 
             el.btnPlayPause?.addEventListener('click', togglePlayPause);
+            updatePlayPauseButton();
 
             el.mainAudio?.addEventListener('loadedmetadata', () => {
                 if (el.seekBar) el.seekBar.max = el.mainAudio.duration || 100;
@@ -1192,6 +1195,9 @@
                 renderSubtitleForTime(0);
             });
 
+            el.mainAudio?.addEventListener('playing', updatePlayPauseButton);
+            el.mainAudio?.addEventListener('emptied', updatePlayPauseButton);
+            el.mainAudio?.addEventListener('error', updatePlayPauseButton);
             el.mainAudio?.addEventListener('play', () => {
                 updatePlayPauseButton();
                 startRafLoop();
