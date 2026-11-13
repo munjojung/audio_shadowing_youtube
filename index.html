@@ -141,7 +141,7 @@
                 </button>
 
                 <!-- Play / Pause -->
-                <button type="button" id="btnPlayPause" class="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 flex items-center justify-center transition active:scale-95" title="재생 / 일시정지 (Space)">
+                <button type="button" id="btnPlayPause" class="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 flex items-center justify-center transition-colors duration-200 active:scale-95" title="재생 (Space)" aria-label="재생" aria-pressed="false">
                     <i id="iconPlay" data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>
                     <i id="iconPause" data-lucide="pause" class="w-5 h-5 fill-current hidden"></i>
                 </button>
@@ -1165,6 +1165,25 @@
                 }
             }
 
+            // Playback state is reflected by both icon and button color.
+            // Paused/stopped: blue + play icon. Playing: emerald + pause icon.
+            function updatePlayPauseButton() {
+                if (!el.mainAudio || !el.btnPlayPause) return;
+                const playing = !el.mainAudio.paused && !el.mainAudio.ended;
+                el.iconPlay?.classList.toggle('hidden', playing);
+                el.iconPause?.classList.toggle('hidden', !playing);
+                el.btnPlayPause.classList.toggle('bg-blue-600', !playing);
+                el.btnPlayPause.classList.toggle('hover:bg-blue-700', !playing);
+                el.btnPlayPause.classList.toggle('shadow-blue-500/25', !playing);
+                el.btnPlayPause.classList.toggle('bg-emerald-600', playing);
+                el.btnPlayPause.classList.toggle('hover:bg-emerald-700', playing);
+                el.btnPlayPause.classList.toggle('shadow-emerald-500/25', playing);
+                const label = playing ? '일시정지' : '재생';
+                el.btnPlayPause.title = `${label} (Space)`;
+                el.btnPlayPause.setAttribute('aria-label', label);
+                el.btnPlayPause.setAttribute('aria-pressed', String(playing));
+            }
+
             el.btnPlayPause?.addEventListener('click', togglePlayPause);
 
             el.mainAudio?.addEventListener('loadedmetadata', () => {
@@ -1174,21 +1193,18 @@
             });
 
             el.mainAudio?.addEventListener('play', () => {
-                el.iconPlay?.classList.add('hidden');
-                el.iconPause?.classList.remove('hidden');
+                updatePlayPauseButton();
                 startRafLoop();
             });
 
             el.mainAudio?.addEventListener('pause', () => {
-                el.iconPlay?.classList.remove('hidden');
-                el.iconPause?.classList.add('hidden');
+                updatePlayPauseButton();
                 stopRafLoop();
                 syncPlaybackState();
             });
 
             el.mainAudio?.addEventListener('ended', () => {
-                el.iconPlay?.classList.remove('hidden');
-                el.iconPause?.classList.add('hidden');
+                updatePlayPauseButton();
                 stopRafLoop();
                 syncPlaybackState();
             });
