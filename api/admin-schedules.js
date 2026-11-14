@@ -22,10 +22,10 @@ module.exports = async (req,res) => {
    const schedule=list.rows.find(x=>Number(x.id)===sid);if(!schedule)return error(res,404,'Schedule not found');
    const end=iso(addDays(parseDate(start),days-1));
    const [overrides,history]=await Promise.all([
-    pool.query(`SELECT to_char(o.learning_date,'YYYY-MM-DD') day,o.content_id,c.title FROM daily_schedule_overrides o JOIN contents c ON c.id=o.content_id WHERE o.learning_date BETWEEN $1::date AND $2::date`,[start,end]),
-    pool.query(`SELECT to_char(h.learning_date,'YYYY-MM-DD') day,h.content_id,c.title,h.selection_type,h.guide_version FROM daily_content_history h JOIN contents c ON c.id=h.content_id WHERE h.learning_date BETWEEN $1::date AND $2::date`,[start,end])
+    pool.query(`SELECT to_char(o.learning_date,'YYYY-MM-DD') AS learning_day,o.content_id,c.title FROM daily_schedule_overrides o JOIN contents c ON c.id=o.content_id WHERE o.learning_date BETWEEN $1::date AND $2::date`,[start,end]),
+    pool.query(`SELECT to_char(h.learning_date,'YYYY-MM-DD') AS learning_day,h.content_id,c.title,h.selection_type,h.guide_version FROM daily_content_history h JOIN contents c ON c.id=h.content_id WHERE h.learning_date BETWEEN $1::date AND $2::date`,[start,end])
    ]);
-   const ov=new Map(overrides.rows.map(x=>[x.day,x]));const hist=new Map(history.rows.map(x=>[x.day,x]));
+   const ov=new Map(overrides.rows.map(x=>[x.learning_day,x]));const hist=new Map(history.rows.map(x=>[x.learning_day,x]));
    const first=parseDate(schedule.start_date);const published=schedule.items.filter(x=>x.status==='published');
    const rows=Array.from({length:days},(_,i)=>{
     const day=iso(addDays(parseDate(start),i));const elapsed=Math.round((parseDate(day)-first)/86400000);
@@ -66,3 +66,4 @@ module.exports = async (req,res) => {
   }catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}
  }catch(e){console.error('Schedule admin error:',e.message);return error(res,500,'Schedule operation failed');}
 };
+
