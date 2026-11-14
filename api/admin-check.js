@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
     });
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!await requireAdmin(req, res)) return;
 
   return res.status(200).json({
     ok: true,

@@ -28,7 +28,7 @@ async function selectForDay(client, date, scheduleId) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!['GET','POST','DELETE'].includes(req.method)) { res.setHeader('Allow', 'GET, POST, DELETE'); return fail(res,405,'Method not allowed'); }
-  if (!requireAdmin(req,res)) return;
+  if (!await requireAdmin(req,res)) return;
   const client = await getPool().connect();
   try {
     if (req.method === 'GET') {

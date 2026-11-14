@@ -9,7 +9,7 @@ function error(res,code,msg){return res.status(code).json({ok:false,error:msg});
 module.exports = async (req,res) => {
  res.setHeader('Cache-Control','no-store');
  if (!['GET','POST','PATCH'].includes(req.method)){res.setHeader('Allow','GET, POST, PATCH');return error(res,405,'Method not allowed');}
- if (!requireAdmin(req,res)) return;
+ if (!await requireAdmin(req,res)) return;
  const pool=getPool();
  try {
   if(req.method==='GET') {
