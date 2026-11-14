@@ -1051,9 +1051,23 @@
                     dailyCatalog = published.map(item => ({ ...item, folder: `contents/${item.id}`, base: item.id, source: 'r2' }));
                     if (state.loadId !== initialLoadId) return;
                     if (published.length) {
-                        const selected = requestedId
-                            ? published.find(item => item.id === requestedId)
-                            : selectDailyRecommendation(published, koreaDate());
+                        // Preserve explicit ?content= links and all existing playback/UI behavior.
+                        // Only the default daily selection uses the Neon recommendation API.
+                        let selected = requestedId ? published.find(item => item.id === requestedId) : null;
+                        if (!requestedId) {
+                            try {
+                                const recommendationResponse = await fetch('/api/today-recommendation', { cache: 'no-store' });
+                                if (!recommendationResponse.ok) throw new Error(`HTTP ${recommendationResponse.status}`);
+                                const recommendation = await recommendationResponse.json();
+                                if (recommendation.ok && recommendation.available && recommendation.date === koreaDate()) {
+                                    selected = published.find(item => item.id === recommendation.content_id) || null;
+                                }
+                            } catch (error) {
+                                console.info('[Daily recommendation] 기존 추천 방식으로 전환:', error);
+                            }
+                            if (!selected) selected = selectDailyRecommendation(published, koreaDate());
+                        }
+                        if (state.loadId !== initialLoadId) return;
                         if (!selected) throw new Error('등록되지 않은 콘텐츠 ID');
                         await loadR2Content(selected.id);
                         if (state.loadId !== initialLoadId + 1) return;
