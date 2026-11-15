@@ -4,16 +4,16 @@ const assert = require('node:assert/strict');
 
 const html = fs.readFileSync('index.html', 'utf8');
 
-// 통계 스크립트가 정확히 한 번 연결되어 있는지 확인
+// ?듦퀎 ?ㅽ겕由쏀듃媛 ?뺥솗????踰??곌껐?섏뼱 ?덈뒗吏 ?뺤씤
 assert.equal(
   (html.match(/<script src="\/scripts\/learning-analytics\.js" defer><\/script>/g) || []).length,
   1
 );
 
-// 기존 MP3 플레이어가 유지되어 있는지 확인
+// 湲곗〈 MP3 ?뚮젅?댁뼱媛 ?좎??섏뼱 ?덈뒗吏 ?뺤씤
 assert.match(html, /<audio id="mainAudio"/);
 
-// 통계 스크립트 확인
+// ?듦퀎 ?ㅽ겕由쏀듃 ?뺤씤
 const js = fs.readFileSync('scripts/learning-analytics.js', 'utf8');
 
 assert.match(js, /recordVisit\(\)/);
@@ -21,8 +21,8 @@ assert.match(js, /addEventListener\('play'/);
 assert.match(js, /addEventListener\('pause'/);
 assert.match(js, /addEventListener\('ended'/);
 
-// 접속 통계 API 확인
-const api = fs.readFileSync('api/learning/visit.js', 'utf8');
+// ?묒냽 ?듦퀎 API ?뺤씤
+const api = fs.readFileSync('lib/learning-handlers/visit.js', 'utf8');
 assert.match(api, /learning_page_visits/);
 
 console.log('Analytics static checks passed');
