@@ -1,0 +1,6 @@
+'use strict';const {getPool}=require('../../lib/db');const A=require('../../lib/learning-auth');
+module.exports=async(req,res)=>{if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({ok:false,error:'Method not allowed'});}if(!A.guard(req,res))return;const id=A.identify(req);if(!id)return res.status(401).json({ok:false,error:'Visitor session required'});
+ const {sessionId,contentId,source='player'}=req.body||{};if(!A.UUID.test(sessionId||'')||!A.ID.test(contentId||'')||!['player','review'].includes(source))return res.status(400).json({ok:false,error:'Invalid session'});
+ try{const r=await getPool().query(`INSERT INTO learning_sessions(id,visitor_id,content_id,source)
+ SELECT $1,$2,c.id,$4 FROM contents c JOIN learning_visitors v ON v.id=$2 AND v.revoked_at IS NULL WHERE c.id=$3
+ ON CONFLICT (id) DO UPDATE SET last_activity_at=learning_sessions.last_activity_at WHERE learning_sessions.visitor_id=$2 AND learning_sessions.content_id=$3 RETURNING id`,[sessionId,id,contentId,source]);if(!r.rowCount)return res.status(404).json({ok:false,error:'Content or session not found'});return res.json({ok:true,sessionId});}catch(e){console.error('Learning session:',e.message);return res.status(500).json({ok:false,error:'Unable to create session'});}};
