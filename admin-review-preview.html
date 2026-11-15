@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review 미리보기 | Shadowing Player Pro</title>
+<style>body{margin:0;background:#f4f7fb;color:#182b42;font:16px system-ui,sans-serif}main{max-width:800px;margin:24px auto;padding:0 16px}header{display:flex;align-items:center;justify-content:space-between;gap:12px}h1{font-size:24px}.muted{color:#53657b;font-size:14px}.panel{background:white;border:1px solid #dae2ee;border-radius:12px;padding:20px;margin:16px 0}fieldset{border:1px solid #dae2ee;border-radius:8px;margin:14px 0;padding:14px}legend{font-weight:650;padding:0 4px}label.option{display:flex;align-items:flex-start;gap:10px;border:1px solid #dae2ee;border-radius:8px;padding:12px;margin:8px 0;cursor:pointer}label.option input{margin-top:4px}button{background:#1763c9;color:white;border:0;border-radius:7px;padding:11px 18px;cursor:pointer}button:disabled{opacity:.5}.feedback{padding:10px;border-radius:7px;background:#edf5ff;margin:10px 0;white-space:pre-wrap}.correct{border-color:#23835b!important;background:#effbf4}.wrong{border-color:#bd4040!important;background:#fff0f0}.error{color:#a12525}</style></head>
+<body><main><header><h1>Yesterday's Review · 미리보기</h1><span class="muted">관리자 전용 · 점수 저장 안 함</span></header><div id="status" class="panel" role="status">관리자 페이지에서 문제를 불러오는 중...</div><div id="quiz" hidden><div class="panel"><h2 id="title"></h2><p id="meta" class="muted"></p><div id="questions"></div><button id="grade" type="button">채점하기 (미리보기)</button><div id="result" role="status"></div></div></div></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let quiz=null;
+function render(p){
+ if(!p||p.schemaVersion!=='1.0'||!Array.isArray(p.questions)||!p.questions.length||!p.questions.every(q=>q.type==='multiple_choice'&&Array.isArray(q.options)&&q.options.length>=2&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length)){$('status').textContent='유효한 객관식 Review JSON이 아닙니다.';return;}
+ quiz=p;$('title').textContent=p.title||'Review Quiz';$('meta').textContent='콘텐츠 ID: '+p.contentId+' · '+p.questions.length+'문항 · 현재 편집본 미리보기';
+ const root=$('questions');root.replaceChildren();$('result').replaceChildren();$('grade').disabled=false;
+ p.questions.forEach((q,i)=>{
+  const field=document.createElement('fieldset');field.dataset.index=String(i);
+  const legend=document.createElement('legend');legend.textContent=(i+1)+'. '+q.question;field.append(legend);
+  q.options.forEach((opt,j)=>{const label=document.createElement('label');label.className='option';const radio=document.createElement('input');radio.type='radio';radio.name='q'+i;radio.value=String(j);const span=document.createElement('span');span.textContent=String(opt);label.append(radio,span);field.append(label);});
+  root.append(field);
+ });
+ $('status').hidden=true;$('quiz').hidden=false;
+}
+$('grade').onclick=()=>{
+ if(!quiz)return;
+ const fields=[...$('questions').querySelectorAll('fieldset')];
+ const missing=fields.findIndex((field,i)=>!field.querySelector('input[name="q'+i+'"]:checked'));
+ if(missing!==-1){$('result').textContent='아직 답하지 않은 문제가 있습니다: '+(missing+1)+'번';fields[missing].scrollIntoView({behavior:'smooth',block:'center'});return;}
+ let score=0;
+ fields.forEach((field,i)=>{
+  const q=quiz.questions[i],selected=Number(field.querySelector('input:checked').value),correct=selected===q.answer;
+  if(correct)score++;
+  field.querySelectorAll('label.option').forEach((label,j)=>{label.classList.toggle('correct',j===q.answer);label.classList.toggle('wrong',j===selected&&!correct);label.querySelector('input').disabled=true;});
+  const feedback=document.createElement('div');feedback.className='feedback';feedback.textContent=(correct?'정답':'오답')+' · 정답: '+q.options[q.answer]+(q.explanation?'\n해설: '+q.explanation:'');field.append(feedback);
+ });
+ $('result').textContent='미리보기 채점 결과: '+score+' / '+quiz.questions.length+'점 · 서버에 저장되지 않았습니다.';
+ $('grade').disabled=true;
+};
+window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='shadowing-review-preview-data')return;render(e.data.payload);});
+if(window.opener){window.opener.postMessage({type:'shadowing-review-preview-ready'},location.origin);}else{$('status').textContent='Review JSON 관리 페이지에서 미리보기 버튼을 눌러 열어주세요.';}
+</script></body></html>
