@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict');
+process.env.REVIEW_COOKIE_SECRET='test-secret-'.repeat(4);
+const {identify}=require('../lib/review-visitor');
+const res={setHeader(k,v){this[k]=v;}};
+const first=identify({headers:{}},res);
+assert.match(first,/^[a-f0-9]{32}$/);
+const cookie=res['Set-Cookie'].split(';')[0];
+assert.equal(identify({headers:{cookie}},{}),first);
+const other=identify({headers:{cookie:cookie.slice(0,-1)+'0'}},{setHeader(){}});
+assert.notEqual(other,first);
+console.log('Review visitor tests: 3 passed');
