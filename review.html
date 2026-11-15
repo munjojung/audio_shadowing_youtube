@@ -1,6 +1,100 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Yesterday's Review | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:720px;margin:40px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:14px;padding:24px}button{background:#1763c9;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer}button:disabled{opacity:.5}label{display:block;padding:12px;border:1px solid #dbe2ee;border-radius:8px;margin:10px 0}a{color:#1763c9}.muted{color:#61748b}</style></head><body><main><h1>Yesterday's Review</h1><p><a href="/">오늘의 쉐도잉으로 돌아가기</a></p><section><h2 id="title">복습 자료 확인 중...</h2><div id="quiz"></div><p id="message" role="status"></p><button id="submit" hidden>채점하기</button></section></main><script>
-let data;
-const el=id=>document.getElementById(id);
-async function init(){try{const r=await fetch('/api/yesterday-review',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'조회 실패');if(!j.available){el('title').textContent='복습 자료 준비 중';el('message').textContent=j.reason==='yesterday_not_finalized'?'어제 확정된 학습 콘텐츠가 없습니다.':'어제 콘텐츠의 Review JSON이 아직 게시되지 않았습니다.';return;}data=j;el('title').textContent=j.title;const root=el('quiz');j.questions.forEach((q,i)=>{const group=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=(i+1)+'. '+q.question;group.append(legend);q.options.forEach((o,k)=>{const label=document.createElement('label');const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=k;label.append(input,document.createTextNode(' '+o));group.append(label);});root.append(group)});el('submit').hidden=false;}catch(e){el('title').textContent='복습 자료를 불러올 수 없습니다';el('message').textContent=e.message;}}
-el('submit').onclick=async()=>{const answers=data.questions.map((_,i)=>{const checked=document.querySelector('input[name="q'+i+'"]:checked');return checked?Number(checked.value):null});if(answers.includes(null)){el('message').textContent='모든 문제에 답해주세요.';return;}el('submit').disabled=true;try{const r=await fetch('/api/review-submit',{method:'POST',headers:{'Content-Type':'application/json','X-Review-Request':'1'},credentials:'same-origin',body:JSON.stringify({reviewId:data.reviewId,attemptId:crypto.randomUUID(),answers})});const j=await r.json();if(!r.ok)throw Error(j.error||'채점 실패');el('message').textContent='복습 결과: '+j.score+' / '+j.total;data.questions.forEach((q,i)=>{const p=document.createElement('p');p.textContent=(i+1)+'번: '+(j.feedback[i].correct?'정답':'오답')+' · 정답: '+q.options[j.feedback[i].answer]+' · '+j.feedback[i].explanation;el('quiz').children[i].append(p)});el('submit').hidden=true;}catch(e){el('message').textContent=e.message;el('submit').disabled=false;}};init();
+(() => {
+  'use strict';
+  let data = null;
+  let submitting = false;
+  const el = id => document.getElementById(id);
+  const message = text => { el('message').textContent = text; };
+
+  async function readJson(response) {
+    let json;
+    try { json = await response.json(); }
+    catch { throw new Error('서버 응답을 읽을 수 없습니다.'); }
+    if (!response.ok || json.ok === false) throw new Error(json.error || `요청 실패 (HTTP ${response.status})`);
+    return json;
+  }
+
+  async function init() {
+    try {
+      const json = await readJson(await fetch('/api/yesterday-review', { cache: 'no-store' }));
+      if (!json.available) {
+        el('title').textContent = '복습 자료 준비 중';
+        message(json.reason === 'yesterday_not_finalized'
+          ? '어제 확정된 학습 콘텐츠가 없습니다.'
+          : '어제 콘텐츠의 Review JSON이 아직 게시되지 않았습니다.');
+        return;
+      }
+      if (!Number.isSafeInteger(Number(json.reviewId)) || !Array.isArray(json.questions) || !json.questions.length ||
+          json.questions.some(q => !q || !Array.isArray(q.options) || !q.options.length || typeof q.question !== 'string')) {
+        throw new Error('복습 문제 데이터 형식이 올바르지 않습니다.');
+      }
+      data = json;
+      el('title').textContent = json.title || "Yesterday's Review";
+      const root = el('quiz');
+      root.replaceChildren();
+      json.questions.forEach((q, i) => {
+        const group = document.createElement('fieldset');
+        const legend = document.createElement('legend');
+        legend.textContent = `${i + 1}. ${q.question}`;
+        group.append(legend);
+        q.options.forEach((option, k) => {
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `q${i}`;
+          input.value = String(k);
+          label.append(input, document.createTextNode(' ' + String(option)));
+          group.append(label);
+        });
+        root.append(group);
+      });
+      el('submit').hidden = false;
+    } catch (error) {
+      el('title').textContent = '복습 자료를 불러올 수 없습니다';
+      message(error.message);
+    }
+  }
+
+  el('submit').addEventListener('click', async () => {
+    if (submitting || !data) return;
+    const answers = data.questions.map((_, i) => {
+      const checked = document.querySelector(`input[name="q${i}"]:checked`);
+      return checked ? Number(checked.value) : null;
+    });
+    if (answers.includes(null)) { message('모든 문제에 답해주세요.'); return; }
+    submitting = true;
+    el('submit').disabled = true;
+    message('채점 중입니다...');
+    try {
+      const result = await readJson(await fetch('/api/review-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Review-Request': '1' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ reviewId: data.reviewId, attemptId: crypto.randomUUID(), answers })
+      }));
+      if (!Array.isArray(result.feedback) || result.feedback.length !== data.questions.length) {
+        throw new Error('채점 결과 형식이 올바르지 않습니다.');
+      }
+      message(`복습 결과: ${result.score} / ${result.total}`);
+      result.feedback.forEach((feedback, i) => {
+        const q = data.questions[i];
+        const answer = Number(feedback.answer);
+        const correctAnswer = Number.isInteger(answer) && answer >= 0 && answer < q.options.length
+          ? String(q.options[answer]) : '확인 불가';
+        const p = document.createElement('p');
+        p.textContent = `${i + 1}번: ${feedback.correct ? '정답' : '오답'} · 정답: ${correctAnswer} · ${feedback.explanation || ''}`;
+        el('quiz').children[i].append(p);
+      });
+      el('quiz').querySelectorAll('input').forEach(input => { input.disabled = true; });
+      el('submit').hidden = true;
+    } catch (error) {
+      message(error.message);
+      el('submit').disabled = false;
+    } finally {
+      submitting = false;
+    }
+  });
+
+  init();
+})();
 </script></body></html>
