@@ -1,6 +1,7 @@
 'use strict';
 
 const handlers = {
+  'admin-calendar': require('./admin-calendar'),
   'admin-check': require('../lib/admin-handlers/admin-check'),
   'admin-contents': require('../lib/admin-handlers/admin-contents'),
   'admin-daily': require('../lib/admin-handlers/admin-daily'),

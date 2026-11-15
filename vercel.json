@@ -1,60 +1,64 @@
 {
-    "rewrites":  [
-                     {
-                         "destination":  "/api/admin?__handler=admin-check",
-                         "source":  "/api/admin-check"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-contents",
-                         "source":  "/api/admin-contents"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-daily",
-                         "source":  "/api/admin-daily"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-learning-stats",
-                         "source":  "/api/admin-learning-stats"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-reviews",
-                         "source":  "/api/admin-reviews"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-schedules",
-                         "source":  "/api/admin-schedules"
-                     },
-                     {
-                         "destination":  "/api/admin?__handler=admin-study-guides",
-                         "source":  "/api/admin-study-guides"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=visitor",
-                         "source":  "/api/learning/visitor"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=visit",
-                         "source":  "/api/learning/visit"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=session",
-                         "source":  "/api/learning/session"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=session-end",
-                         "source":  "/api/learning/session-end"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=events",
-                         "source":  "/api/learning/events"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=progress",
-                         "source":  "/api/learning/progress"
-                     },
-                     {
-                         "destination":  "/api/learning?__handler=privacy",
-                         "source":  "/api/learning/privacy"
-                     }
-                 ]
+  "rewrites": [
+    {
+      "source": "/api/admin-calendar",
+      "destination": "/api/admin?__handler=admin-calendar"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-check",
+      "source": "/api/admin-check"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-contents",
+      "source": "/api/admin-contents"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-daily",
+      "source": "/api/admin-daily"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-learning-stats",
+      "source": "/api/admin-learning-stats"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-reviews",
+      "source": "/api/admin-reviews"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-schedules",
+      "source": "/api/admin-schedules"
+    },
+    {
+      "destination": "/api/admin?__handler=admin-study-guides",
+      "source": "/api/admin-study-guides"
+    },
+    {
+      "destination": "/api/learning?__handler=visitor",
+      "source": "/api/learning/visitor"
+    },
+    {
+      "destination": "/api/learning?__handler=visit",
+      "source": "/api/learning/visit"
+    },
+    {
+      "destination": "/api/learning?__handler=session",
+      "source": "/api/learning/session"
+    },
+    {
+      "destination": "/api/learning?__handler=session-end",
+      "source": "/api/learning/session-end"
+    },
+    {
+      "destination": "/api/learning?__handler=events",
+      "source": "/api/learning/events"
+    },
+    {
+      "destination": "/api/learning?__handler=progress",
+      "source": "/api/learning/progress"
+    },
+    {
+      "destination": "/api/learning?__handler=privacy",
+      "source": "/api/learning/privacy"
+    }
+  ]
 }
