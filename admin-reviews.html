@@ -1,30 +1,3 @@
-
-
-// Date-scoped Review check (read-only admin endpoint)
-let dateReviewPayload=null;
-const dateResult=el('calendarResult');
-const krDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-function datePlus(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
-el('reviewDate').value=datePlus(krDate(),1);
-el('checkReviewDate').onclick=async()=>{
- dateReviewPayload=null;el('previewDateReview').disabled=true;dateResult.textContent='조회 중...';
- try{
-  const day=el('reviewDate').value;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw Error('날짜를 선택하세요');
-  const r=await request('/api/admin-review-calendar?date='+encodeURIComponent(day));
-  const lines=[`Review 제공일: ${r.date}`,`대상 학습일: ${r.learningDate}`,`콘텐츠: ${r.contentTitle||'미선정'} (${r.contentId||'-'})`,`선정 근거: ${r.selectionSource||'-'}`,`Review 상태: ${r.reviewStatus}`,`발행 버전: ${r.publishedVersion??'-'}`,`문항 수: ${r.questionCount??0}`];
-  if(r.note)lines.push('참고: '+r.note);
-  dateResult.textContent=lines.join('\n');dateResult.style.whiteSpace='pre-wrap';
-  if(r.payload&&r.reviewStatus==='published'){dateReviewPayload=r.payload;el('previewDateReview').disabled=false;}
- }catch(e){dateResult.textContent='조회 실패: '+e.message;}
-};
-el('previewDateReview').onclick=()=>{
- if(!dateReviewPayload)return;
- previewPayload=structuredClone(dateReviewPayload);
- previewWindow=window.open('/admin-review-preview.html','shadowing-review-preview','width=1000,height=850,scrollbars=yes,resizable=yes');
- if(!previewWindow){dateResult.textContent+='\n팝업 차단을 해제하세요.';return;}
- previewWindow.focus();
-};
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review JSON 관리 | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:900px;margin:30px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:12px;padding:22px}textarea{width:100%;box-sizing:border-box;height:360px;font:13px monospace}input,select{padding:10px;max-width:100%;box-sizing:border-box}select{min-width:min(100%,430px)}.hint{font-size:13px;color:#53657b}.selected{font-weight:600}button{background:#1763c9;color:white;border:0;border-radius:7px;padding:10px 16px;margin:6px;cursor:pointer}pre{white-space:pre-wrap}a{color:#1763c9}</style><style>.calendar{margin:20px 0;padding:18px;border:1px solid #ccd9ea;border-radius:10px;background:#f8fbff}.calendar .grid{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.calendar .grid label{display:block;font-weight:600}.calendar input[type=date]{min-width:190px}.calendar table{width:100%;border-collapse:collapse;margin-top:12px}.calendar th,.calendar td{text-align:left;padding:9px;border-bottom:1px solid #dce5ef}.calendar .note{font-size:13px;color:#53657b}.calendar .warn{color:#a34b12}</style></head><body><main><h1>Review JSON 관리</h1><p><a href="/admin.html">관리자 대시보드</a></p><section><div class="auth"><label for="token">관리자 인증 토큰 (세션 인증이 되지 않을 때만 입력)</label> <input id="token" type="password" autocomplete="off" placeholder="관리자 토큰" style="width:min(100%,370px)"> <button id="login" type="button">토큰으로 인증</button> <button id="logout" type="button">토큰 해제</button><p class="hint">토큰은 이 페이지의 메모리에서만 사용하며 저장하지 않습니다. 관리자 세션이 유효하면 입력할 필요가 없습니다.</p></div><div class="calendar" id="calendarPanel"><h2>날짜별 Review 사전 확인</h2><p class="note">선택 날짜에 학습자가 받는 전날 콘텐츠의 Review를 확인합니다. 조회만 수행하며 학습 이력·Review를 변경하지 않습니다.</p><div class="grid"><div><label for="reviewDate">Review 제공 날짜 (한국시간)</label><input id="reviewDate" type="date"></div><button id="checkReviewDate" type="button">날짜별 조회</button><button id="previewDateReview" type="button" disabled>해당 Review 학습자 미리보기</button></div><div id="calendarResult" role="status" aria-live="polite">날짜를 선택하고 조회하세요.</div></div><p>콘텐츠 선택 <select id="content" aria-label="등록된 콘텐츠 선택" disabled><option value="">콘텐츠 목록 불러오는 중...</option></select> <button id="reload" type="button">목록 새로고침</button> <button id="list" type="button">버전 조회</button><span class="hint" id="selected"></span></p><p><label for="version">등록된 JSON 버전</label> <select id="version" disabled><option value="">버전을 조회하세요</option></select> <button id="loadversion" type="button" disabled>선택 버전 불러오기</button></p><p class="hint">콘텐츠를 선택하면 게시 버전의 JSON을 자동으로 불러옵니다. 이전 버전은 목록에서 선택하세요. 저장 시 기존 버전을 덮어쓰지 않고 새 버전을 만듭니다.</p><p><input type="file" id="file" accept=".json,application/json"></p><p class="hint">콘텐츠를 변경하면 이전 JSON 편집 내용이 지워집니다. 필요한 내용은 먼저 별도로 저장하세요.</p><textarea id="json" placeholder="Review JSON을 붙여넣거나 파일을 선택하세요."></textarea><p><button id="validate">JSON 검증</button><button id="preview" type="button">학습자 화면 미리보기</button><button id="draft">초안 저장</button><button id="publish">게시 버전 등록</button></p><p class="hint">미리보기는 현재 편집창의 JSON을 사용하며 학습 점수를 서버에 저장하지 않습니다. Draft도 미리 볼 수 있습니다.</p><pre id="result" role="status"></pre></section></main><script>
 'use strict';
 const el=id=>document.getElementById(id),out=t=>el('result').textContent=t;
@@ -159,6 +132,31 @@ el('preview').onclick=()=>{
     previewWindow.focus();
     out('미리보기 창을 열었습니다. 현재 JSON '+payload.questions.length+'문항을 표시합니다.');
   }catch(e){out('미리보기 오류: '+e.message);}
+};
+// Date-scoped Review check (read-only admin endpoint)
+let dateReviewPayload=null;
+const dateResult=el('calendarResult');
+const krDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function datePlus(s,n){const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+el('reviewDate').value=datePlus(krDate(),1);
+el('checkReviewDate').onclick=async()=>{
+ dateReviewPayload=null;el('previewDateReview').disabled=true;dateResult.textContent='조회 중...';
+ try{
+  const day=el('reviewDate').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day))throw Error('날짜를 선택하세요');
+  const r=await request('/api/admin-review-calendar?date='+encodeURIComponent(day));
+  const lines=[`Review 제공일: ${r.date}`,`대상 학습일: ${r.learningDate}`,`콘텐츠: ${r.contentTitle||'미선정'} (${r.contentId||'-'})`,`선정 근거: ${r.selectionSource||'-'}`,`Review 상태: ${r.reviewStatus}`,`발행 버전: ${r.publishedVersion??'-'}`,`문항 수: ${r.questionCount??0}`];
+  if(r.note)lines.push('참고: '+r.note);
+  dateResult.textContent=lines.join('\n');dateResult.style.whiteSpace='pre-wrap';
+  if(r.payload&&r.reviewStatus==='published'){dateReviewPayload=r.payload;el('previewDateReview').disabled=false;}
+ }catch(e){dateResult.textContent='조회 실패: '+e.message;}
+};
+el('previewDateReview').onclick=()=>{
+ if(!dateReviewPayload)return;
+ previewPayload=structuredClone(dateReviewPayload);
+ previewWindow=window.open('/admin-review-preview.html','shadowing-review-preview','width=1000,height=850,scrollbars=yes,resizable=yes');
+ if(!previewWindow){dateResult.textContent+='\n팝업 차단을 해제하세요.';return;}
+ previewWindow.focus();
 };
 loadContents();
 </script></body></html>
