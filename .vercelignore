@@ -1,0 +1,20 @@
+﻿.git
+node_modules
+*.zip
+*.bak
+test-results/
+playwright-report/
+tests/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+
+# Local audio extraction files - served from Cloudflare R2
+/DLDHUZh2FqA/
+/tsSHK7o5FbE/
+/7MFVtRS1fRw/
+
+/7MFVtRS1fRw/
+/TSIgstxOCwY/

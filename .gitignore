@@ -25,3 +25,8 @@ node_modules/
 
 # Stage 4 local backups
 /scripts/*.stage4b-backup.js
+.vercel
+
+# Local learning media folders
+/7MFVtRS1fRw/
+/TSIgstxOCwY/
