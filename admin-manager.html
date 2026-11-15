@@ -24,6 +24,7 @@ let items = [];
 let selectedId = '';
 let editing = false;
 let guideVersions = [];
+let guideRequestSequence = 0; // Ignore responses from previously selected content
 const $ = id => document.getElementById(id);
 function notice(message, error=false){$('message').textContent=message;$('message').className='status'+(error?' error':'');}
 async function api(path, options={}){
@@ -39,17 +40,78 @@ function addCell(row,value){const td=document.createElement('td');td.textContent
 function makeButton(label,action){const b=document.createElement('button');b.className='secondary';b.textContent=label;b.addEventListener('click',action);return b;}
 async function loadContents(){const data=await api('/api/admin-contents');items=Array.isArray(data.contents)?data.contents:[];renderRows();notice('콘텐츠 '+items.length+'건 조회 완료');}
 function renderRows(){const tbody=$('rows');tbody.replaceChildren();for(const c of items){const tr=document.createElement('tr');if(c.id===selectedId)tr.className='active';addCell(tr,c.id);addCell(tr,c.title);const status=addCell(tr,c.status);status.className='pill '+c.status;const guideCell=addCell(tr,'조회 가능');const action=document.createElement('td');action.append(makeButton('선택',()=>selectContent(c)));tr.append(action);tbody.append(tr);}if(!items.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=5;td.textContent='등록된 콘텐츠가 없습니다.';tr.append(td);tbody.append(tr);}}
-function resetEditor(){editing=false;selectedId='';$('editorTitle').textContent='새 콘텐츠 등록';for(const k of ['id','title','description','mp3','en','ko'])$(k).value='';$('id').readOnly=false;$('status').value='draft';$('guideJson').value='';$('guideContext').textContent='선택된 콘텐츠가 없습니다.';$('guideRows').replaceChildren();renderRows();}
-async function selectContent(c){editing=true;selectedId=c.id;$('editorTitle').textContent='콘텐츠 편집 · '+c.id;$('id').value=c.id;$('id').readOnly=true;$('title').value=c.title||'';$('description').value=c.description||'';$('status').value=c.status;$('mp3').value=c.mp3_r2_key||'';$('en').value=c.vtt_en_r2_key||'';$('ko').value=c.vtt_ko_r2_key||'';$('guideJson').value='';renderRows();$('guideContext').textContent='선택: '+c.id+' · '+c.title;await run(async()=>{await loadGuides(c.id);notice('콘텐츠 '+c.id+' 선택 완료');});}
-async function loadGuides(id){const data=await api('/api/admin-study-guides?id='+encodeURIComponent(id));if(selectedId!==id)return;guideVersions=Array.isArray(data.guides)?data.guides:[];const tbody=$('guideRows');tbody.replaceChildren();for(const g of guideVersions){const tr=document.createElement('tr');addCell(tr,'v'+g.version);addCell(tr,g.status);addCell(tr,g.created_at?new Date(g.created_at).toLocaleString('ko-KR'):'');const td=document.createElement('td');td.append(makeButton('JSON 불러오기',()=>{$('guideJson').value=JSON.stringify(g.payload,null,2);notice('v'+g.version+' JSON을 편집창에 불러왔습니다. 저장하면 새 버전이 생성됩니다.');}));tr.append(td);tbody.append(tr);}if(!guideVersions.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.textContent='등록된 Study Guide가 없습니다.';tr.append(td);tbody.append(tr);}}
+function clearGuideSelection(){
+  guideRequestSequence++;
+  guideVersions=[];
+  $('guideJson').value='';
+  $('guideRows').replaceChildren();
+}
+function resetEditor(){
+  editing=false;selectedId='';clearGuideSelection();
+  $('editorTitle').textContent='새 콘텐츠 등록';
+  for(const k of ['id','title','description','mp3','en','ko'])$(k).value='';
+  $('id').readOnly=false;$('status').value='draft';
+  $('guideContext').textContent='선택된 콘텐츠가 없습니다.';
+  renderRows();
+}
+async function selectContent(c){
+  editing=true;selectedId=c.id;clearGuideSelection();
+  $('editorTitle').textContent='콘텐츠 편집 · '+c.id;
+  $('id').value=c.id;$('id').readOnly=true;
+  $('title').value=c.title||'';$('description').value=c.description||'';
+  $('status').value=c.status;
+  $('mp3').value=c.mp3_r2_key||'';
+  $('en').value=c.vtt_en_r2_key||'';
+  $('ko').value=c.vtt_ko_r2_key||'';
+  renderRows();
+  $('guideContext').textContent='선택: '+c.id+' · '+c.title+' · 버전 조회 중...';
+  try{
+    const loaded=await loadGuides(c.id);
+    if(loaded && selectedId===c.id){
+      $('guideContext').textContent='선택: '+c.id+' · '+c.title;
+      notice('콘텐츠 '+c.id+' 선택 완료');
+    }
+  }catch(e){if(selectedId===c.id)notice(e.message,true);}
+}
+async function loadGuides(id){
+  const sequence=++guideRequestSequence;
+  const data=await api('/api/admin-study-guides?id='+encodeURIComponent(id));
+  if(selectedId!==id||sequence!==guideRequestSequence)return false;
+  const guides=Array.isArray(data.guides)?data.guides:[];
+  guideVersions=guides;
+  const tbody=$('guideRows');tbody.replaceChildren();
+  for(const g of guides){
+    const tr=document.createElement('tr');
+    addCell(tr,'v'+g.version);addCell(tr,g.status);
+    addCell(tr,g.created_at?new Date(g.created_at).toLocaleString('ko-KR'):'');
+    const td=document.createElement('td');
+    const payload=g.payload;
+    const valid=payload && typeof payload==='object' && !Array.isArray(payload)
+      && payload.contentId===id && Array.isArray(payload.sections);
+    const button=makeButton(valid?'JSON 불러오기':'ID 불일치 · 불러오기 차단',()=>{
+      if(selectedId!==id){notice('콘텐츠가 변경되었습니다. 다시 조회하세요.',true);return;}
+      if(!valid){notice('불러오기 차단: 등록 콘텐츠 ID와 JSON 내부 contentId가 일치하지 않습니다.',true);return;}
+      $('guideJson').value=JSON.stringify(payload,null,2);
+      notice('콘텐츠 '+id+' · v'+g.version+' JSON을 불러왔습니다. 저장하면 새 버전이 생성됩니다.');
+    });
+    if(!valid){button.disabled=true;tr.className='invalid-guide';}
+    td.append(button);tr.append(td);tbody.append(tr);
+  }
+  if(!guides.length){
+    const tr=document.createElement('tr');const td=document.createElement('td');
+    td.colSpan=4;td.textContent='등록된 Study Guide가 없습니다.';
+    tr.append(td);tbody.append(tr);
+  }
+  return true;
+}
 $('login').addEventListener('click',()=>run(async()=>{const candidate=$('token').value.trim();if(candidate.length<32)throw new Error('관리자 토큰을 입력하세요.');token=candidate;try{await api('/api/admin-check');await loadContents()}catch(e){token='';throw e;}$('token').value='';$('workspace').classList.remove('hidden');$('logout').disabled=false;notice('관리자 인증 성공 · 콘텐츠 '+items.length+'건');}));
-$('logout').addEventListener('click',()=>{token='';items=[];selectedId='';guideVersions=[];$('workspace').classList.add('hidden');$('logout').disabled=true;$('token').value='';notice('로그아웃했습니다.');});
+$('logout').addEventListener('click',()=>{token='';items=[];selectedId='';clearGuideSelection();$('workspace').classList.add('hidden');$('logout').disabled=true;$('token').value='';notice('로그아웃했습니다.');});
 $('authPanel').classList.add('hidden');
 fetch('/api/admin-session',{cache:'no-store'}).then(r=>{if(!r.ok){location.replace('/admin.html');return;}$('workspace').classList.remove('hidden');run(loadContents);}).catch(()=>location.replace('/admin.html'));
 $('reload').addEventListener('click',()=>run(loadContents));$('new').addEventListener('click',()=>{resetEditor();$('editorPanel').scrollIntoView({behavior:'smooth'});});$('clear').addEventListener('click',resetEditor);
 $('save').addEventListener('click',()=>run(async()=>{const id=$('id').value.trim();const title=$('title').value.trim();if(!/^[A-Za-z0-9_-]{11}$/.test(id))throw new Error('콘텐츠 ID는 영숫자, _ 또는 -로 구성된 11자리여야 합니다.');if(!title)throw new Error('제목을 입력하세요.');const media={mp3_r2_key:$('mp3').value.trim(),vtt_en_r2_key:$('en').value.trim(),vtt_ko_r2_key:$('ko').value.trim()};if(Object.values(media).some(v=>!v))throw new Error('MP3 및 VTT 경로 3개가 모두 필요합니다.');const status=$('status').value;if(status==='published'&&!confirm('이 콘텐츠를 Published로 설정하시겠습니까? R2 파일 존재 여부는 아직 검증하지 않았습니다.'))return;const body={id,title,description:$('description').value,status,media};await api('/api/admin-contents',{method:editing?'PATCH':'POST',body:JSON.stringify(body)});await loadContents();const item=items.find(c=>c.id===id);if(item)await selectContent(item);notice(id+' '+(editing?'저장':'등록')+' 완료');}));
 $('guideTemplate').addEventListener('click',()=>{if(!selectedId){notice('먼저 콘텐츠를 선택하세요.',true);return;}$('guideJson').value=JSON.stringify({contentId:selectedId,titleKo:'',titleEn:'',descriptionKo:'',descriptionEn:'',sections:[]},null,2);});
-async function saveGuide(publish){if(!selectedId)throw new Error('먼저 콘텐츠를 선택하세요.');let payload;try{payload=JSON.parse($('guideJson').value)}catch{throw new Error('Study Guide JSON 형식이 올바르지 않습니다.');}if(!payload||Array.isArray(payload)||payload.contentId!==selectedId||!Array.isArray(payload.sections))throw new Error('contentId가 선택 콘텐츠와 일치하고 sections 배열이 있어야 합니다.');if(!confirm('새 Study Guide 버전을 '+(publish?'Published로 발행':'Draft로 저장')+'하시겠습니까? 기존 버전은 유지됩니다.'))return;const data=await api('/api/admin-study-guides',{method:'POST',body:JSON.stringify({contentId:selectedId,payload,publish})});await loadGuides(selectedId);notice('Study Guide v'+data.version+' · '+data.status+' 저장 완료');}
+async function saveGuide(publish){if(!selectedId)throw new Error('먼저 콘텐츠를 선택하세요.');let payload;try{payload=JSON.parse($('guideJson').value)}catch{throw new Error('Study Guide JSON 형식이 올바르지 않습니다.');}if(!payload||Array.isArray(payload)||payload.contentId!==selectedId||!Array.isArray(payload.sections))throw new Error('contentId가 선택 콘텐츠와 일치하고 sections 배열이 있어야 합니다.');if(!confirm('새 Study Guide 버전을 '+(publish?'Published로 발행':'Draft로 저장')+'하시겠습니까? 기존 버전은 유지됩니다.'))return;const contentId=selectedId;const data=await api('/api/admin-study-guides',{method:'POST',body:JSON.stringify({contentId,payload,publish})});if(selectedId===contentId)await loadGuides(contentId);notice('Study Guide v'+data.version+' · '+data.status+' 저장 완료');}
 $('saveGuideDraft').addEventListener('click',()=>run(()=>saveGuide(false)));$('saveGuidePublish').addEventListener('click',()=>run(()=>saveGuide(true)));
 </script>
 </body>
