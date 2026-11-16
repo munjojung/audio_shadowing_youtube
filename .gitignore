@@ -30,3 +30,7 @@ node_modules/
 # Local learning media folders
 /7MFVtRS1fRw/
 /TSIgstxOCwY/
+.env.production.local
+.env.production.local.backup
+youtube-content-registry.csv
+test-results/
