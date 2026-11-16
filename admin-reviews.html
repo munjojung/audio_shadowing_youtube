@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review JSON 관리 | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:900px;margin:30px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:12px;padding:22px}textarea{width:100%;box-sizing:border-box;height:360px;font:13px monospace}textarea.drag-over{outline:3px dashed #1763c9;outline-offset:3px;background:#eef5ff}#drop-status{margin:8px 0;color:#334f71;font-size:13px;white-space:pre-wrap}input,select{padding:10px;max-width:100%;box-sizing:border-box}select{min-width:min(100%,430px)}.hint{font-size:13px;color:#53657b}.selected{font-weight:600}button{background:#1763c9;color:white;border:0;border-radius:7px;padding:10px 16px;margin:6px;cursor:pointer} .file-picker{display:inline-block;background:#1763c9;color:#fff;border-radius:7px;padding:10px 16px;margin:6px;cursor:pointer;font:inherit;font-size:14px}.file-picker:hover{background:#1253a8}#file{width:180px;font-size:12px;vertical-align:middle;padding:0}pre{white-space:pre-wrap}a{color:#1763c9}</style></head><body><main><h1>Review JSON 관리</h1><p><a href="/admin.html">관리자 대시보드</a></p><section><div class="auth"><label for="token">관리자 인증 토큰 (세션 인증이 되지 않을 때만 입력)</label> <input id="token" type="password" autocomplete="off" placeholder="관리자 토큰" style="width:min(100%,370px)"> <button id="login" type="button">토큰으로 인증</button> <button id="logout" type="button">토큰 해제</button><p class="hint">토큰은 이 페이지의 메모리에서만 사용하며 저장하지 않습니다. 관리자 세션이 유효하면 입력할 필요가 없습니다.</p></div><p>콘텐츠 선택 <select id="content" aria-label="등록된 콘텐츠 선택" disabled><option value="">콘텐츠 목록 불러오는 중...</option></select> <button id="reload" type="button">목록 새로고침</button> <button id="list" type="button">버전 조회</button><span class="hint" id="selected"></span></p><p><label for="version">등록된 JSON 버전</label> <select id="version" disabled><option value="">버전을 조회하세요</option></select> <button id="loadversion" type="button" disabled>선택 버전 불러오기</button></p><p class="hint">콘텐츠를 선택하면 게시 버전의 JSON을 자동으로 불러옵니다. 이전 버전은 목록에서 선택하세요. 저장 시 기존 버전을 덮어쓰지 않고 새 버전을 만듭니다.</p><p class="hint">콘텐츠를 변경하면 이전 JSON 편집 내용이 지워집니다. 필요한 내용은 먼저 별도로 저장하세요.</p><textarea id="json" placeholder="Review JSON을 붙여넣거나 .json 파일을 여기에 끌어 놓으세요." aria-label="Review JSON 파일 드래그 앤 드롭"></textarea><p id="drop-status" role="status">.json 파일을 이 입력창에 끌어 놓을 수 있습니다. 파일을 읽은 뒤 JSON 검증 결과를 표시합니다.</p><p><button id="validate">JSON 검증</button><button id="preview" type="button">학습자 화면 미리보기</button><button id="draft">초안 저장</button><button id="publish">게시 버전 등록</button><label class="file-picker" for="file">JSON 파일 선택</label><input type="file" id="file" accept=".json,application/json" aria-label="Review JSON 파일 선택"></p><p class="hint">미리보기는 현재 편집창의 JSON을 사용하며 학습 점수를 서버에 저장하지 않습니다. Draft도 미리 볼 수 있습니다.</p><pre id="result" role="status"></pre></section></main><script>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Review JSON 관리 | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:900px;margin:30px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:12px;padding:22px}textarea{width:100%;box-sizing:border-box;height:360px;font:13px monospace}textarea.drag-over{outline:3px dashed #1763c9;outline-offset:3px;background:#eef5ff}#drop-status{margin:8px 0;color:#334f71;font-size:13px;white-space:pre-wrap}input,select{padding:10px;max-width:100%;box-sizing:border-box}select{min-width:min(100%,430px)}.hint{font-size:13px;color:#53657b}.selected{font-weight:600}button{background:#1763c9;color:white;border:0;border-radius:7px;padding:10px 16px;margin:6px;cursor:pointer} .file-picker{display:inline-block;background:#1763c9;color:#fff;border-radius:7px;padding:10px 16px;margin:6px;cursor:pointer;font:inherit;font-size:14px}.file-picker:hover{background:#1253a8}#file{display:none}pre{white-space:pre-wrap}a{color:#1763c9}</style></head><body><main><h1>Review JSON 관리</h1><p><a href="/admin.html">관리자 대시보드</a></p><section><p>콘텐츠 선택 <select id="content" aria-label="등록된 콘텐츠 선택" disabled><option value="">콘텐츠 목록 불러오는 중...</option></select> <button id="reload" type="button">목록 새로고침</button> <button id="list" type="button">버전 조회</button></p><p><label for="version">등록된 JSON 버전</label> <select id="version" disabled><option value="">버전을 조회하세요</option></select> <button id="loadversion" type="button" disabled>선택 버전 불러오기</button></p><p class="hint">콘텐츠를 선택하면 게시 버전의 JSON을 자동으로 불러옵니다. 이전 버전은 목록에서 선택하세요. 저장 시 기존 버전을 덮어쓰지 않고 새 버전을 만듭니다.</p><p class="hint">콘텐츠를 변경하면 이전 JSON 편집 내용이 지워집니다. 필요한 내용은 먼저 별도로 저장하세요.</p><textarea id="json" placeholder="Review JSON을 붙여넣거나 .json 파일을 여기에 끌어 놓으세요." aria-label="Review JSON 파일 드래그 앤 드롭"></textarea><p id="drop-status" role="status">.json 파일을 이 입력창에 끌어 놓을 수 있습니다. 파일을 읽은 뒤 JSON 검증 결과를 표시합니다.</p><p><button id="validate">JSON 검증</button><button id="preview" type="button">학습자 화면 미리보기</button><button id="draft">초안 저장</button><button id="publish">게시 버전 등록</button><label class="file-picker" for="file">JSON 파일 선택</label><input type="file" id="file" accept=".json,application/json" aria-label="Review JSON 파일 선택"></p><p class="hint">미리보기는 현재 편집창의 JSON을 사용하며 학습 점수를 서버에 저장하지 않습니다. Draft도 미리 볼 수 있습니다.</p><pre id="result" role="status"></pre></section></main><script>
 'use strict';
 const el=id=>document.getElementById(id),out=t=>el('result').textContent=t;
 let adminToken='';
@@ -11,7 +11,7 @@ async function request(path,method='GET',body){
  const r=await fetch(path,{method,credentials:'same-origin',cache:'no-store',headers,body:body!==undefined?JSON.stringify(body):undefined});
  const raw=await r.text();let j;
  try{j=JSON.parse(raw)}catch{throw Error('HTTP '+r.status+' · API 응답이 JSON이 아닙니다');}
- if(!r.ok){const e=Error(authError({status:r.status})?'관리자 인증이 필요합니다 (HTTP '+r.status+'). 관리자 로그인 후 새로고침하거나 위에서 관리자 토큰으로 인증하세요.':(j.error||'요청 실패')+' (HTTP '+r.status+')');e.status=r.status;throw e;}
+ if(!r.ok){const e=Error(authError({status:r.status})?'관리자 인증이 필요합니다 (HTTP '+r.status+'). 관리자 대시보드에서 로그인한 뒤 새로고침하세요.':(j.error||'요청 실패')+' (HTTP '+r.status+')');e.status=r.status;throw e;}
  return j;
 }
 function parsed(){
@@ -25,7 +25,6 @@ function parsed(){
 }
 function clearEditor(){el('json').value='';el('file').value='';resetVersions();out('콘텐츠가 변경되어 이전 JSON 입력을 지웠습니다. 새 JSON을 불러오거나 붙여넣으세요.');}
 function resetVersions(){++versionSerial;loadedVersions=[];el('version').replaceChildren(new Option('버전을 조회하세요',''));el('version').disabled=true;el('loadversion').disabled=true;}
-function updateSelected(){el('selected').textContent=el('content').value?'선택 ID: '+el('content').value:'';}
 async function loadContents(preferredId){
  const serial=++requestSerial, select=el('content'), oldId=preferredId??select.value;
  select.disabled=true;select.replaceChildren(new Option('콘텐츠 목록 불러오는 중...',''));
@@ -39,24 +38,17 @@ async function loadContents(preferredId){
   for(const c of items)select.add(new Option((c.title||'제목 없음')+' ('+c.id+')',c.id));
   select.disabled=!items.length;
   if(oldId&&items.some(c=>c.id===oldId))select.value=oldId;
-  updateSelected();
   if(select.value)await loadVersions(true);
   else resetVersions();
   if(!select.value)out(items.length?'콘텐츠 '+items.length+'건을 불러왔습니다.':'등록된 콘텐츠가 없습니다.');
  }catch(e){
   if(serial!==requestSerial)return;
   select.replaceChildren(new Option('목록 조회 실패 — 인증 확인',''));
-  updateSelected();out('콘텐츠 목록 조회 오류: '+e.message);
+  out('콘텐츠 목록 조회 오류: '+e.message);
  }
 }
-el('content').addEventListener('change',async()=>{clearEditor();updateSelected();if(el('content').value)await loadVersions(true);});
+el('content').addEventListener('change',async()=>{clearEditor();if(el('content').value)await loadVersions(true);});
 el('reload').onclick=()=>loadContents();
-el('login').onclick=async()=>{
- const value=el('token').value.trim();if(!value){out('관리자 토큰을 입력하세요.');return;}
- adminToken=value;el('token').value='';
- await loadContents();
-};
-el('logout').onclick=()=>{adminToken='';el('token').value='';el('content').replaceChildren(new Option('로그아웃 — 인증 필요',''));el('content').disabled=true;clearEditor();out('페이지에 입력한 토큰을 해제했습니다.');};
 function validateImportedJson(){
  try{
   const p=parsed();
