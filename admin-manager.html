@@ -14,7 +14,7 @@
 <div id="workspace" class="hidden">
 <section class="panel"><div class="actions" style="justify-content:space-between;align-items:center;margin:0 0 12px"><h2 style="margin:0" id="contentListTitle">콘텐츠 목록 (총 0개)</h2><div class="actions" style="margin:0"><button id="reload" class="secondary">새로고침</button><button id="new">+ 새 콘텐츠</button></div></div><div class="tablewrap"><table><thead><tr><th scope="col">번호</th><th>ID</th><th>제목</th><th>상태</th><th>Study Guide</th><th>편집</th></tr></thead><tbody id="rows"></tbody></table></div><p class="muted">Neon에 등록된 콘텐츠만 표시합니다. 현재 플레이어는 기존 JSON 카탈로그를 계속 사용합니다.</p></section>
 <section class="panel" id="editorPanel"><h2 id="editorTitle">콘텐츠 등록</h2><div class="grid"><div><label for="id">콘텐츠 ID (YouTube 11자리)</label><input id="id" maxlength="11" placeholder="예: 7MFVtRS1fRw"></div><div><label for="status">발행 상태</label><select id="status"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div></div><label for="title">콘텐츠 제목</label><input id="title"><label for="description">설명</label><textarea id="description"></textarea><h2 style="margin-top:20px">R2 파일 경로</h2><p class="muted">실제 R2 오브젝트 키를 입력합니다. 이 화면은 R2 파일 존재 여부를 확인하지 않습니다.</p><label for="mp3">MP3 키</label><input id="mp3"><label for="en">영어 VTT 키</label><input id="en"><label for="ko">한국어 VTT 키</label><input id="ko"><div class="actions"><button id="save">콘텐츠 저장</button><button id="clear" class="secondary">입력 초기화</button></div></section>
-<section class="panel"><h2>Study Guide 버전 관리</h2><p class="muted">아래에서 콘텐츠를 독립적으로 선택하세요. JSON 전체를 그대로 저장합니다. 저장할 때마다 새 버전이 생성되며 기존 버전은 삭제되지 않습니다.</p><label for="guideContentSelect">Study Guide 대상 콘텐츠 선택</label><select id="guideContentSelect"><option value="">콘텐츠를 선택하세요</option></select><div id="guideContext" class="status">선택된 콘텐츠가 없습니다.</div><div class="tablewrap"><table><thead><tr><th>버전</th><th>상태</th><th>생성일</th><th>JSON 보기</th></tr></thead><tbody id="guideRows"></tbody></table></div><label for="guideJson">Study Guide JSON</label><textarea class="json" id="guideJson" spellcheck="false" aria-label="Study Guide JSON 파일을 여기에 놓거나 편집하세요" placeholder="JSON 파일을 이 영역에 끌어다 놓거나 아래 JSON 파일 버튼에서 선택하세요."></textarea><p class="muted" id="guideDropHint">JSON 파일을 위 편집 영역에 드래그하여 놓으면 자동으로 불러옵니다. 서버 저장은 Draft 저장 또는 Published 발행 버튼을 눌러야 합니다.</p><div class="actions"><button id="saveGuideDraft">새 버전 Draft 저장</button><button id="saveGuidePublish">새 버전 Published 발행</button><label for="guideFile" class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;padding:10px 14px;border-radius:8px">JSON 파일</label><input type="file" id="guideFile" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0" aria-label="Study Guide JSON 파일 선택"></div><p class="muted">Published를 선택하면 이전 Published 버전의 상태가 Draft로 변경됩니다. 이 화면은 기존 버전을 재발행하거나 삭제하는 기능을 제공하지 않습니다.</p></section>
+<section class="panel"><h2>Study Guide 버전 관리</h2><p class="muted">아래에서 콘텐츠를 독립적으로 선택하세요. JSON 전체를 그대로 저장합니다. 저장할 때마다 새 버전이 생성되며 기존 버전은 삭제되지 않습니다.</p><label for="guideContentSelect">Study Guide 대상 콘텐츠 선택</label><select id="guideContentSelect"><option value="">콘텐츠를 선택하세요</option></select><div id="guideContext" class="status">선택된 콘텐츠가 없습니다.</div><div class="tablewrap"><table><thead><tr><th>버전</th><th>상태</th><th>생성일</th><th>JSON 보기</th></tr></thead><tbody id="guideRows"></tbody></table></div><label for="guideJson">Study Guide JSON</label><textarea class="json" id="guideJson" spellcheck="false" aria-label="Study Guide JSON 파일을 여기에 놓거나 편집하세요" placeholder="JSON 파일을 이 영역에 끌어다 놓거나 아래 JSON 파일 버튼에서 선택하세요."></textarea><p class="muted" id="guideDropHint">JSON 파일을 위 편집 영역에 드래그하여 놓으면 내용을 먼저 표시하고 검증합니다. 서버 저장은 Draft 저장 또는 Published 발행 버튼을 눌러야 합니다.</p><div id="guideFileStatus" class="status" role="status" aria-live="polite">JSON 파일을 선택하거나 끌어다 놓으세요.</div><div class="actions"><button id="saveGuideDraft">새 버전 Draft 저장</button><button id="saveGuidePublish">새 버전 Published 발행</button><label for="guideFile" class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;padding:10px 14px;border-radius:8px">JSON 파일</label><input type="file" id="guideFile" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0" aria-label="Study Guide JSON 파일 선택"></div><p class="muted">Published를 선택하면 이전 Published 버전의 상태가 Draft로 변경됩니다. 이 화면은 기존 버전을 재발행하거나 삭제하는 기능을 제공하지 않습니다.</p></section>
 </div>
 <p style='text-align:center'><a href='/admin.html'>← Admin Dashboard</a></p></main><footer>관리자 토큰은 localStorage/sessionStorage/cookie에 저장하지 않습니다.</footer>
 <script>
@@ -127,20 +127,40 @@ fetch('/api/admin-session',{cache:'no-store'}).then(r=>{if(!r.ok){location.repla
 $('reload').addEventListener('click',()=>run(loadContents));$('new').addEventListener('click',()=>{resetEditor();$('editorPanel').scrollIntoView({behavior:'smooth'});});$('clear').addEventListener('click',resetEditor);
 $('save').addEventListener('click',()=>run(async()=>{const id=$('id').value.trim();const title=$('title').value.trim();if(!/^[A-Za-z0-9_-]{11}$/.test(id))throw new Error('콘텐츠 ID는 영숫자, _ 또는 -로 구성된 11자리여야 합니다.');if(!title)throw new Error('제목을 입력하세요.');const media={mp3_r2_key:$('mp3').value.trim(),vtt_en_r2_key:$('en').value.trim(),vtt_ko_r2_key:$('ko').value.trim()};if(Object.values(media).some(v=>!v))throw new Error('MP3 및 VTT 경로 3개가 모두 필요합니다.');const status=$('status').value;if(status==='published'&&!confirm('이 콘텐츠를 Published로 설정하시겠습니까? R2 파일 존재 여부는 아직 검증하지 않았습니다.'))return;const body={id,title,description:$('description').value,status,media};await api('/api/admin-contents',{method:editing?'PATCH':'POST',body:JSON.stringify(body)});await loadContents();const item=items.find(c=>c.id===id);if(item)await selectContent(item);notice(id+' '+(editing?'저장':'등록')+' 완료');}));
 async function saveGuide(publish){if(!guideSelectedId)throw new Error('Study Guide 대상 콘텐츠를 선택하세요.');let payload;try{payload=JSON.parse($('guideJson').value)}catch{throw new Error('Study Guide JSON 형식이 올바르지 않습니다.');}if(!payload||Array.isArray(payload)||payload.contentId!==guideSelectedId||!Array.isArray(payload.sections))throw new Error('contentId가 선택 콘텐츠와 일치하고 sections 배열이 있어야 합니다.');if(!confirm('새 Study Guide 버전을 '+(publish?'Published로 발행':'Draft로 저장')+'하시겠습니까? 기존 버전은 유지됩니다.'))return;const contentId=guideSelectedId;const data=await api('/api/admin-study-guides',{method:'POST',body:JSON.stringify({contentId,payload,publish})});if(guideSelectedId===contentId)await loadGuides(contentId);notice('Study Guide v'+data.version+' · '+data.status+' 저장 완료');}
+function guideFileFeedback(message, error=false){
+  const box=$('guideFileStatus');
+  box.textContent=message;
+  box.className='status'+(error?' error':'');
+}
 async function loadGuideJsonFile(file){
   if(!file)return;
+  const editor=$('guideJson');
   try{
-    if(!guideSelectedId)throw new Error('먼저 Study Guide 대상 콘텐츠를 선택하세요.');
     if(!/\.json$/i.test(file.name))throw new Error('확장자가 .json인 파일만 불러올 수 있습니다.');
     if(file.size>1024*1024)throw new Error('JSON 파일은 1MB 이하만 허용합니다.');
-    const payload=JSON.parse(await file.text());
-    if(!payload||Array.isArray(payload)||typeof payload!=='object'||!Array.isArray(payload.sections))throw new Error('Study Guide JSON에 sections 배열이 필요합니다.');
-    if(payload.contentId!==guideSelectedId)throw new Error('JSON contentId ('+String(payload.contentId)+')가 선택한 콘텐츠 ('+guideSelectedId+')와 다릅니다.');
-    const editor=$('guideJson');
+    const content=await file.text();
     if(editor.value.trim()&&!confirm('현재 JSON 편집 내용을 선택한 파일로 교체하시겠습니까?'))return;
+    // Always display the file contents first, even if validation fails.
+    editor.value=content;
+    editor.focus();
+    let payload;
+    try{payload=JSON.parse(content);}
+    catch(e){guideFileFeedback('⚠ '+file.name+' 불러옴 · JSON 문법 오류: '+e.message+' · 편집 후 다시 저장하세요.',true);return;}
     editor.value=JSON.stringify(payload,null,2);
-    notice('JSON 파일 '+file.name+'을(를) 불러왔습니다. 서버에 저장하려면 Draft 저장 또는 Published 발행을 누르세요.');
-  }catch(e){notice('파일 불러오기 실패: '+e.message,true);}
+    if(!payload||typeof payload!=='object'||Array.isArray(payload)){
+      guideFileFeedback('⚠ '+file.name+' 불러옴 · JSON 최상위 항목은 객체여야 합니다.',true);return;
+    }
+    if(!guideSelectedId){
+      guideFileFeedback('⚠ '+file.name+' 불러옴 · Study Guide 대상 콘텐츠를 먼저 선택하세요. 현재 파일 contentId: '+String(payload.contentId??'(없음)'),true);return;
+    }
+    if(payload.contentId!==guideSelectedId){
+      guideFileFeedback('⚠ 콘텐츠 ID 불일치 · 파일: '+String(payload.contentId??'(없음)')+' / 선택된 콘텐츠: '+guideSelectedId+' · JSON 내용은 표시했습니다. 올바른 콘텐츠를 선택하거나 contentId를 수정하세요. 저장은 검증 전까지 차단됩니다.',true);return;
+    }
+    if(!Array.isArray(payload.sections)){
+      guideFileFeedback('⚠ '+file.name+' 불러옴 · sections 배열이 없습니다. JSON 내용을 수정하세요.',true);return;
+    }
+    guideFileFeedback('✓ '+file.name+' 불러오기 및 기본 검증 완료 · 콘텐츠 ID: '+guideSelectedId+' · 서버 저장은 아직 수행하지 않았습니다.');
+  }catch(e){guideFileFeedback('파일 불러오기 오류: '+e.message,true);}
 }
 $('guideFile').addEventListener('change',async()=>{
   try{await loadGuideJsonFile($('guideFile').files?.[0]);}
