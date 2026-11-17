@@ -1,6 +1,56 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Yesterday's Review | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:720px;margin:40px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:14px;padding:24px}button{background:#1763c9;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer}button:disabled{opacity:.5}label{display:block;padding:12px;border:1px solid #dbe2ee;border-radius:8px;margin:10px 0}a{color:#1763c9}.muted{color:#61748b}</style></head><body><main><h1>Yesterday's Review</h1><p><a href="/">오늘의 쉐도잉으로 돌아가기</a> · <a href="/review-calendar.html">지난 학습 복습 캘린더</a></p><section><h2 id="title">복습 자료 확인 중...</h2><div id="quiz"></div><p id="message" role="status"></p><button id="submit" hidden>채점하기</button></section></main><script>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Yesterday's Review | Shadowing Player Pro</title><style>body{font:16px system-ui;background:#f4f7fb;color:#182b42;margin:0}main{max-width:720px;margin:40px auto;padding:20px}section{background:white;border:1px solid #dae2ee;border-radius:14px;padding:24px}button{background:#1763c9;color:white;border:0;border-radius:8px;padding:12px 18px;cursor:pointer}button:disabled{opacity:.5}label{display:block;padding:12px;border:1px solid #dbe2ee;border-radius:8px;margin:10px 0}a{color:#1763c9}.muted{color:#61748b}header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.langs{display:flex;gap:4px;background:#e9f0fa;border-radius:9px;padding:4px}.langs button{padding:8px 12px;background:transparent;color:#1763c9}.langs button[aria-pressed="true"]{background:#1763c9;color:white}fieldset{border:1px solid #dbe2ee;border-radius:8px;margin:14px 0;padding:12px}legend{font-weight:600}</style></head><body><main><header class="top"><h1 id="pageHeading">Yesterday's Review</h1><div class="langs" role="group" aria-label="Language"><button type="button" id="langKo">한국어</button><button type="button" id="langEn">English</button></div></header><p><a id="playerLink" href="/">오늘의 쉐도잉으로 돌아가기</a> · <a id="calendarLink" href="/review-calendar.html">지난 학습 복습 캘린더</a></p><section><h2 id="title">복습 자료 확인 중...</h2><div id="quiz"></div><p id="message" role="status"></p><button id="submit" hidden>채점하기</button></section></main><script>
 (() => {
   'use strict';
+  const translations = {
+    ko: { heading:'어제의 10문제 복습', player:'오늘의 쉐도잉으로 돌아가기', calendar:'지난 학습 복습 캘린더', loading:'복습 자료 확인 중...', pending:'복습 자료 준비 중', noFinal:'어제 확정된 학습 콘텐츠가 없습니다.', noReview:'어제 콘텐츠의 Review JSON이 아직 게시되지 않았습니다.', loadError:'복습 자료를 불러올 수 없습니다', invalid:'복습 문제 데이터 형식이 올바르지 않습니다.', invalidResponse:'서버 응답을 읽을 수 없습니다.', requestFail:'요청 실패', submit:'채점하기', all:'모든 문제에 답해주세요.', scoring:'채점 중입니다...', score:'복습 결과', invalidFeedback:'채점 결과 형식이 올바르지 않습니다.', correct:'정답', incorrect:'오답', answer:'정답', unknown:'확인 불가', questionSuffix:'번' },
+    en: { heading:"Yesterday's 10-Question Review", player:"Back to today's shadowing", calendar:'Past lessons calendar', loading:'Loading review...', pending:'Review not available yet', noFinal:'No finalized lesson was found for yesterday.', noReview:"Yesterday's review questions have not been published yet.", loadError:'Unable to load review', invalid:'Invalid review question data.', invalidResponse:'Unable to read the server response.', requestFail:'Request failed', submit:'Submit answers', all:'Please answer all questions.', scoring:'Grading...', score:'Review score', invalidFeedback:'Invalid grading result.', correct:'Correct', incorrect:'Incorrect', answer:'Answer', unknown:'Unavailable', questionSuffix:'' }
+  };
+  let lang = 'ko';
+  try { lang = localStorage.getItem('shadowing-review-language') || localStorage.getItem('review-calendar-language') || 'ko'; } catch {}
+  if (lang !== 'en') lang = 'ko';
+  const t = key => translations[lang][key];
+  let statusKey = 'loading';
+  let statusReason = null;
+  let errorText = null;
+  let gradingResult = null;
+  function renderLanguage() {
+    document.documentElement.lang = lang;
+    document.title = `${t('heading')} | Shadowing Player Pro`;
+    el('pageHeading').textContent = t('heading');
+    el('playerLink').textContent = t('player');
+    el('calendarLink').textContent = t('calendar');
+    el('langKo').setAttribute('aria-pressed', String(lang === 'ko'));
+    el('langEn').setAttribute('aria-pressed', String(lang === 'en'));
+    el('submit').textContent = t('submit');
+    if (statusKey === 'loading') el('title').textContent = t('loading');
+    if (statusKey === 'pending') { el('title').textContent = t('pending'); message(t(statusReason)); }
+    if (statusKey === 'error') { el('title').textContent = t('loadError'); message(errorText || t('invalid')); }
+    if (statusKey === 'ready' && data) el('title').textContent = data.title || t('heading');
+    if (statusKey === 'unanswered') message(t('all'));
+    if (statusKey === 'scoring') message(t('scoring'));
+    if (statusKey === 'graded' && gradingResult) showFeedback(gradingResult);
+  }
+  function showFeedback(result) {
+    message(`${t('score')}: ${result.score} / ${result.total}`);
+    document.querySelectorAll('.review-feedback').forEach(n => n.remove());
+    result.feedback.forEach((feedback, i) => {
+      const q = data.questions[i];
+      const answer = Number(feedback.answer);
+      const correctAnswer = Number.isInteger(answer) && answer >= 0 && answer < q.options.length
+        ? String(q.options[answer]) : t('unknown');
+      const p = document.createElement('p');
+      p.className = 'review-feedback';
+      p.textContent = `${i + 1}${t('questionSuffix')}: ${feedback.correct ? t('correct') : t('incorrect')} · ${t('answer')}: ${correctAnswer} · ${feedback.explanation || ''}`;
+      el('quiz').children[i].append(p);
+    });
+  }
+  function setLanguage(next) {
+    lang = next;
+    try { localStorage.setItem('shadowing-review-language', lang); localStorage.setItem('review-calendar-language', lang); } catch {}
+    renderLanguage();
+  }
+  el('langKo').addEventListener('click', () => setLanguage('ko'));
+  el('langEn').addEventListener('click', () => setLanguage('en'));
   let data = null;
   let submitting = false;
   const el = id => document.getElementById(id);
@@ -9,8 +59,8 @@
   async function readJson(response) {
     let json;
     try { json = await response.json(); }
-    catch { throw new Error('서버 응답을 읽을 수 없습니다.'); }
-    if (!response.ok || json.ok === false) throw new Error(json.error || `요청 실패 (HTTP ${response.status})`);
+    catch { throw new Error(t('invalidResponse')); }
+    if (!response.ok || json.ok === false) throw new Error(json.error || `${t('requestFail')} (HTTP ${response.status})`);
     return json;
   }
 
@@ -18,17 +68,17 @@
     try {
       const json = await readJson(await fetch('/api/yesterday-review', { cache: 'no-store' }));
       if (!json.available) {
-        el('title').textContent = '복습 자료 준비 중';
-        message(json.reason === 'yesterday_not_finalized'
-          ? '어제 확정된 학습 콘텐츠가 없습니다.'
-          : '어제 콘텐츠의 Review JSON이 아직 게시되지 않았습니다.');
+        statusKey = 'pending';
+        statusReason = json.reason === 'yesterday_not_finalized' ? 'noFinal' : 'noReview';
+        renderLanguage();
         return;
       }
       if (!Number.isSafeInteger(Number(json.reviewId)) || !Array.isArray(json.questions) || !json.questions.length ||
           json.questions.some(q => !q || !Array.isArray(q.options) || !q.options.length || typeof q.question !== 'string')) {
-        throw new Error('복습 문제 데이터 형식이 올바르지 않습니다.');
+        throw new Error(t('invalid'));
       }
       data = json;
+      statusKey = 'ready';
       el('title').textContent = json.title || "Yesterday's Review";
       const root = el('quiz');
       root.replaceChildren();
@@ -49,9 +99,11 @@
         root.append(group);
       });
       el('submit').hidden = false;
+      renderLanguage();
     } catch (error) {
-      el('title').textContent = '복습 자료를 불러올 수 없습니다';
-      message(error.message);
+      statusKey = 'error';
+      errorText = error.message;
+      renderLanguage();
     }
   }
 
@@ -61,10 +113,11 @@
       const checked = document.querySelector(`input[name="q${i}"]:checked`);
       return checked ? Number(checked.value) : null;
     });
-    if (answers.includes(null)) { message('모든 문제에 답해주세요.'); return; }
+    if (answers.includes(null)) { statusKey = 'unanswered'; message(t('all')); return; }
     submitting = true;
     el('submit').disabled = true;
-    message('채점 중입니다...');
+    statusKey = 'scoring';
+    message(t('scoring'));
     try {
       const result = await readJson(await fetch('/api/review-submit', {
         method: 'POST',
@@ -73,18 +126,11 @@
         body: JSON.stringify({ reviewId: data.reviewId, attemptId: crypto.randomUUID(), answers })
       }));
       if (!Array.isArray(result.feedback) || result.feedback.length !== data.questions.length) {
-        throw new Error('채점 결과 형식이 올바르지 않습니다.');
+        throw new Error(t('invalidFeedback'));
       }
-      message(`복습 결과: ${result.score} / ${result.total}`);
-      result.feedback.forEach((feedback, i) => {
-        const q = data.questions[i];
-        const answer = Number(feedback.answer);
-        const correctAnswer = Number.isInteger(answer) && answer >= 0 && answer < q.options.length
-          ? String(q.options[answer]) : '확인 불가';
-        const p = document.createElement('p');
-        p.textContent = `${i + 1}번: ${feedback.correct ? '정답' : '오답'} · 정답: ${correctAnswer} · ${feedback.explanation || ''}`;
-        el('quiz').children[i].append(p);
-      });
+      gradingResult = result;
+      statusKey = 'graded';
+      showFeedback(result);
       el('quiz').querySelectorAll('input').forEach(input => { input.disabled = true; });
       el('submit').hidden = true;
     } catch (error) {
@@ -95,6 +141,7 @@
     }
   });
 
+  renderLanguage();
   init();
 })();
 </script></body></html>
