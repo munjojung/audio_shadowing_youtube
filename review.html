@@ -9,6 +9,8 @@
   try { lang = localStorage.getItem('shadowing-review-language') || localStorage.getItem('review-calendar-language') || 'ko'; } catch {}
   if (lang !== 'en') lang = 'ko';
   const t = key => translations[lang][key];
+  const el = id => document.getElementById(id);
+  const message = text => { el('message').textContent = text; };
   let statusKey = 'loading';
   let statusReason = null;
   let errorText = null;
@@ -53,8 +55,6 @@
   el('langEn').addEventListener('click', () => setLanguage('en'));
   let data = null;
   let submitting = false;
-  const el = id => document.getElementById(id);
-  const message = text => { el('message').textContent = text; };
 
   async function readJson(response) {
     let json;
