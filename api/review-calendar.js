@@ -21,12 +21,12 @@ module.exports = async (req,res) => {
         FROM daily_content_history h JOIN contents c ON c.id=h.content_id
         JOIN content_media m ON m.content_id=c.id
         WHERE h.learning_date >= $1::date AND h.learning_date < ($1::date + interval '1 month')
-          AND h.learning_date < $2::date AND c.status='published'
+          AND h.learning_date <= $2::date AND c.status='published'
           AND NULLIF(m.mp3_r2_key,'') IS NOT NULL
         ORDER BY h.learning_date`,[month+'-01',current]);
       return res.status(200).json({ok:true,month,days:result.rows});
     }
-    if(date>=current) return res.status(404).json({ok:false,error:'Past lessons only'});
+    if(date>current) return res.status(404).json({ok:false,error:'Past lessons only'});
     const result=await pool.query(`SELECT h.content_id,c.title,g.version,g.payload
       FROM daily_content_history h JOIN contents c ON c.id=h.content_id
       JOIN content_media m ON m.content_id=c.id
